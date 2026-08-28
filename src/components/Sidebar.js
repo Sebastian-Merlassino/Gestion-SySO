@@ -26,7 +26,8 @@ import {
   Share2,
   Sun,
   Volume2,
-  PersonStanding
+  PersonStanding,
+  Receipt
 } from 'lucide-react';
 import { useToast } from '@/components/providers/ToastProvider';
 import { identifyUser, resetAnalytics } from '@/lib/analytics';
@@ -226,6 +227,7 @@ export default function Sidebar({
     { id: 'protocolo-puesta-a-tierra', label: 'Protocolo de Puesta a Tierra', path: `/${tenantSlug}/protocolos/puesta-a-tierra`, icon: Zap, adminOnly: true },
     { id: 'legajo', label: 'Legajo Técnico', path: `/${tenantSlug}/legajo`, icon: Folder },
     { id: 'nomina', label: 'Nómina de Personal', path: `/${tenantSlug}/nomina`, icon: Users },
+    { id: 'facturacion', label: 'Facturación ARCA', path: `/${tenantSlug}/facturacion`, icon: Receipt, adminOnly: true },
     { id: 'divider-2', type: 'divider' },
     { id: 'profile', label: 'Editar Perfil', path: `/${tenantSlug}/profile`, icon: Settings, shrink: true },
     ...(isSuperAdmin ? [{ id: 'superadmin', label: 'SuperAdmin Console', path: '/admin', icon: ShieldCheck, isSuperAdminItem: true, shrink: true }] : [])
@@ -248,9 +250,9 @@ export default function Sidebar({
 
   const planFeatures = {
     free: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'superadmin', 'empresas', 'equipo', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra'],
-    basic_5: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'superadmin', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra', 'empresas', 'equipo'],
-    standard_25: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'superadmin', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra', 'visitas', 'avisos', 'empresas', 'equipo'],
-    libre: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'superadmin', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
+    basic_5: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'superadmin', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra', 'empresas', 'equipo', 'facturacion'],
+    standard_25: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'superadmin', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra', 'visitas', 'avisos', 'empresas', 'equipo', 'facturacion'],
+    libre: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'superadmin', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo', 'facturacion']
   };
 
   const allowedFeatures = planFeatures[effectivePlan] || planFeatures.free;

@@ -29,6 +29,7 @@ export function resolveHelpKeyFromPath(pathname) {
   if (cleanPath.includes('/accidentes')) return 'accidentes';
   if (cleanPath.includes('/matriz-riesgos')) return 'matriz-riesgos';
   if (cleanPath.includes('/extintores')) return 'extintores';
+  if (cleanPath.includes('/facturacion')) return 'facturacion';
   if (cleanPath.includes('/control-electrico')) return 'control-electrico';
   if (cleanPath.includes('/visitas')) return 'visitas';
   if (cleanPath.includes('/avisos')) return 'avisos';

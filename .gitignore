@@ -61,3 +61,5 @@ tablas/
 supabase/.branches/
 supabase/.temp/
 
+# Scratch temporal
+scratch/

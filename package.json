@@ -35,14 +35,17 @@
     "lucide-react": "^0.379.0",
     "mercadopago": "^3.1.0",
     "next": "14.2.35",
+    "node-forge": "^1.4.0",
     "nodemailer": "^9.0.1",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.2.108",
     "posthog-js": "^1.418.1",
+    "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^3.6.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.2/xlsx-0.20.2.tgz",
+    "xml2js": "^0.6.2",
     "zod": "^3.23.8"
   },
   "devDependencies": {

@@ -25,12 +25,16 @@ import { profileHelp } from './articles/profile';
 import { onboardingHelp } from './articles/onboarding';
 import { loginHelp, registerHelp } from './articles/auth';
 import { adminHelp } from './articles/admin';
+import { facturacionHelp } from './articles/facturacion';
 
 export const HELP_ARTICLES = {
   'dashboard': dashboardHelp,
   'empresas': empresasHelp,
   'empresas-listado': empresasHelp,
   'empresas-form': empresasHelp,
+  'facturacion': facturacionHelp,
+  'facturacion-listado': facturacionHelp,
+  'facturacion-form': facturacionHelp,
   'correctivas': correctivasHelp,
   'accidentes': accidentesHelp,
   'visitas': visitasHelp,

@@ -32,7 +32,7 @@ export default function TerminosPage() {
         {/* Content */}
         <div className="p-8 sm:p-10 space-y-8">
           <div className="border-b border-slate-100 pb-4">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Última actualización: 14 de Agosto de 2026</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Última actualización: 28 de Agosto de 2026</p>
           </div>
 
           <section className="space-y-3">
@@ -51,7 +51,7 @@ export default function TerminosPage() {
               2. Descripción del Servicio y Licencia
             </h2>
             <p className="text-xs leading-relaxed text-slate-655">
-              Gestión SySO es una solución informática en la nube (SaaS) destinada a la administración técnica, seguimiento y control de programas de higiene, seguridad y salud ocupacional laboral. Se otorga al Usuario una licencia no exclusiva, intransferible y revocable para utilizar el Servicio según el plan contratado. El Servicio se comercializa bajo un modelo multi-tenant que garantiza el aislamiento lógico de los datos de cada cliente u organización.
+              Gestión SySO es una solución informática en la nube (SaaS) destinada a la administración técnica, seguimiento y control de programas de higiene, seguridad y salud ocupacional laboral, incluyendo módulos de emisión fiscal y control de cobranzas. Se otorga al Usuario una licencia no exclusiva, intransferible y revocable para utilizar el Servicio según el plan contratado. El Servicio se comercializa bajo un modelo multi-tenant que garantiza el aislamiento lógico de los datos de cada cliente u organización.
             </p>
           </section>
 
@@ -75,7 +75,7 @@ export default function TerminosPage() {
             </p>
             <ul className="list-disc pl-5 text-xs text-slate-655 space-y-2">
               <li>
-                **Límites de Uso**: Cada plan comercial posee topes en la cantidad de empresas clientes que pueden cargarse en el sistema, número de inspectores/técnicos registrados y acceso a módulos y protocolos normativos (ej. Programa de Capacitación Anual, Capacitaciones Online, Protocolo de Iluminación Res. 84/12, Protocolo de Ruido Res. 85/12, Protocolo de Ergonomía Res. SRT 886/15, Protocolo de Puesta a Tierra Res. SRT 900/15, Extintores, Control Eléctrico, Legajo Técnico, Checklists Personalizados).
+                **Límites de Uso**: Cada plan comercial posee topes en la cantidad de empresas clientes que pueden cargarse en el sistema, número de inspectores/técnicos registrados y acceso a módulos y protocolos normativos (ej. Programa de Capacitación Anual, Capacitaciones Online, Facturación Electrónica ARCA, Protocolo de Iluminación Res. 84/12, Protocolo de Ruido Res. 85/12, Protocolo de Ergonomía Res. SRT 886/15, Protocolo de Puesta a Tierra Res. SRT 900/15, Extintores, Control Eléctrico, Legajo Técnico, Checklists Personalizados).
               </li>
               <li>
                 **Procesamiento de Pagos**: Las suscripciones se pagan mensualmente por adelantado mediante la pasarela segura de **Mercado Pago**. Al suscribirse, usted autoriza el cobro automático mensual recurrente.
@@ -108,6 +108,27 @@ export default function TerminosPage() {
           <section className="space-y-3">
             <h2 className="font-outfit text-base font-bold text-slate-900 flex items-center gap-2">
               <span className="text-[#468DFF] font-bold font-outfit">6.</span>
+              Módulo de Facturación Electrónica ARCA (ex AFIP)
+            </h2>
+            <p className="text-xs leading-relaxed text-slate-655">
+              La Plataforma permite la vinculación directa con los Servicios Web de la **Agencia de Recaudación y Control Aduanero (ARCA, ex AFIP)** (WSAA y WSFEv1) mediante el uso de Certificados Digitales X.509 y Claves Privadas provistas o generadas por el Usuario.
+            </p>
+            <ul className="list-disc pl-5 text-xs text-slate-655 space-y-2">
+              <li>
+                **Validez y Responsabilidad Fiscal**: Todos los comprobantes electrónicos autorizados por ARCA (Facturas A, B, C, Notas de Débito y Notas de Crédito) que obtengan Código de Autorización Electrónico (**CAE**) tienen plena validez legal y tributaria según la normativa argentina. El Usuario es el **único y exclusivo responsable** de la exactitud de los montos facturados, alícuotas de IVA, conceptos, datos de los receptores y declaraciones juradas fiscales emitidas bajo su CUIT y punto de venta.
+              </li>
+              <li>
+                **Custodia de Credenciales**: El Usuario es responsable de resguardar y mantener vigentes sus certificados digitales y autorizaciones en el Administrador de Relaciones de Clave Fiscal de ARCA para el servicio `wsfe`.
+              </li>
+              <li>
+                **Disponibilidad de Servicios de ARCA**: Gestión SySO no garantiza la disponibilidad ininterrumpida de los servidores de ARCA. Ante fallos de conexión o caídas del servicio fiscal oficial, la Plataforma resguarda las operaciones para su posterior verificación o reintento mediante el panel de Reconciliación.
+              </li>
+            </ul>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-outfit text-base font-bold text-slate-900 flex items-center gap-2">
+              <span className="text-[#468DFF] font-bold font-outfit">7.</span>
               Uso de Herramientas de Inteligencia Artificial (IA)
             </h2>
             <p className="text-xs leading-relaxed text-slate-655">
@@ -117,7 +138,7 @@ export default function TerminosPage() {
 
           <section className="space-y-3">
             <h2 className="font-outfit text-base font-bold text-slate-900 flex items-center gap-2">
-              <span className="text-[#468DFF] font-bold font-outfit">7.</span>
+              <span className="text-[#468DFF] font-bold font-outfit">8.</span>
               Propiedad Intelectual y Modificaciones del Servicio
             </h2>
             <p className="text-xs leading-relaxed text-slate-655">
@@ -128,7 +149,7 @@ export default function TerminosPage() {
           <section className="space-y-3">
             <h2 className="font-outfit text-base font-bold text-slate-900 flex items-center gap-2">
               <Mail className="h-4 w-4 text-[#468DFF] shrink-0" />
-              8. Contacto
+              9. Contacto
             </h2>
             <p className="text-xs leading-relaxed text-slate-655">
               Para consultas de soporte técnico, facturación, reportes de vulnerabilidad o dudas referentes a estos Términos, comuníquese de forma directa a nuestro correo electrónico oficial:

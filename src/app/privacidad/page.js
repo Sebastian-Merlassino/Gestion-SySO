@@ -32,7 +32,7 @@ export default function PrivacidadPage() {
         {/* Content */}
         <div className="p-8 sm:p-10 space-y-8">
           <div className="border-b border-slate-100 pb-4">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Última actualización: 18 de Agosto de 2026</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Última actualización: 28 de Agosto de 2026</p>
           </div>
 
           <section className="space-y-3">
@@ -41,7 +41,7 @@ export default function PrivacidadPage() {
               1. Compromiso de Confidencialidad y Seguridad
             </h2>
             <p className="text-xs leading-relaxed text-slate-655">
-              En **Gestión SySO**, valoramos la privacidad de nuestros usuarios y clientes. Esta Política de Privacidad describe cómo recopilamos, utilizamos, protegemos y compartimos sus datos personales e información técnica en el contexto de nuestra plataforma SaaS de Gestión de Higiene y Seguridad Laboral. Al registrar una cuenta y utilizar el Servicio, usted acepta las prácticas descritas en este documento.
+              En **Gestión SySO**, valoramos la privacidad de nuestros usuarios y clientes. Esta Política de Privacidad describe cómo recopilamos, utilizamos, protegemos y compartimos sus datos personales e información técnica en el contexto de nuestra plataforma SaaS de Gestión de Higiene y Seguridad Laboral y Facturación Electrónica. Al registrar una cuenta y utilizar el Servicio, usted acepta las prácticas descritas en este documento.
             </p>
           </section>
 
@@ -61,7 +61,10 @@ export default function PrivacidadPage() {
                 **Datos Operativos del Tenant**: Información de empresas clientes del profesional, nómina de empleados, actas de capacitación, programa de capacitación anual, capacitaciones online, protocolos de medición y estudios técnicos (Iluminación Res. 84/12, Ruido Res. 85/12, Ergonomía Res. SRT 886/15, Puesta a Tierra Res. SRT 900/15), inspecciones de extintores, auditorías de control eléctrico, avisos de riesgo, registros de accidentes y acciones correctivas.
               </li>
               <li>
-                **Datos de Facturación**: Identificadores de transacciones de pago, estado de suscripciones y cupones de descuento procesados mediante Mercado Pago (no almacenamos directamente los datos de tarjetas de crédito o débito).
+                **Credenciales Fiscales y Facturación Electrónica ARCA**: Certificados Digitales X.509 (.crt), Claves Privadas RSA (.key), Puntos de Venta y registros de comprobantes emitidos con CAE oficial para la interacción con los Web Services de ARCA.
+              </li>
+              <li>
+                **Datos de Facturación Comercial**: Identificadores de transacciones de pago, estado de suscripciones y cupones de descuento procesados mediante Mercado Pago (no almacenamos directamente los datos de tarjetas de crédito o débito).
               </li>
             </ul>
           </section>
@@ -105,7 +108,28 @@ export default function PrivacidadPage() {
 
           <section className="space-y-3">
             <h2 className="font-outfit text-base font-bold text-slate-900 flex items-center gap-2">
-              <span className="text-[#468DFF] font-bold font-outfit">5.</span>
+              <Shield className="h-4 w-4 text-[#468DFF] shrink-0" />
+              5. Seguridad de Certificados Digitales y Datos Fiscales ARCA
+            </h2>
+            <p className="text-xs leading-relaxed text-slate-655">
+              Los Certificados Digitales (`.crt`) y Claves Privadas (`.key`) cargados por el Usuario para la facturación electrónica son resguardados de forma estrictamente privada y confidencial:
+            </p>
+            <ul className="list-disc pl-5 text-xs text-slate-655 space-y-1.5 mt-1">
+              <li>
+                **Uso Exclusivo para Firma Fiscal**: Las credenciales se utilizan **única y exclusivamente** en el backend para la generación de Tickets de Acceso (TRA) firmados con PKCS#7 / CMS dirigidos a los Web Services de ARCA (WSAA).
+              </li>
+              <li>
+                **Aislamiento y Confidencialidad**: Las claves privadas nunca son expuestas públicamente ni compartidas con terceros. El acceso a los registros fiscales está restringido de forma absoluta a los administradores del Tenant correspondiente mediante RLS.
+              </li>
+              <li>
+                **Destrucción Segura**: En caso de que el Usuario decida renovar o eliminar su configuración fiscal, las credenciales previas son sobrescritas o eliminadas de manera definitiva del almacenamiento seguro.
+              </li>
+            </ul>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-outfit text-base font-bold text-slate-900 flex items-center gap-2">
+              <span className="text-[#468DFF] font-bold font-outfit">6.</span>
               Derechos del Usuario (Acceso, Rectificación y Supresión)
             </h2>
             <p className="text-xs leading-relaxed text-slate-655">
@@ -118,7 +142,7 @@ export default function PrivacidadPage() {
 
           <section className="space-y-3">
             <h2 className="font-outfit text-base font-bold text-slate-900 flex items-center gap-2">
-              <span className="text-[#468DFF] font-bold font-outfit">6.</span>
+              <span className="text-[#468DFF] font-bold font-outfit">7.</span>
               Retención de Datos
             </h2>
             <p className="text-xs leading-relaxed text-slate-655">
@@ -129,7 +153,7 @@ export default function PrivacidadPage() {
           <section className="space-y-3">
             <h2 className="font-outfit text-base font-bold text-slate-900 flex items-center gap-2">
               <Mail className="h-4 w-4 text-[#468DFF] shrink-0" />
-              7. Contacto para Consultas de Privacidad
+              8. Contacto para Consultas de Privacidad
             </h2>
             <p className="text-xs leading-relaxed text-slate-655">
               Si tiene preguntas, objeciones o sugerencias sobre el tratamiento de sus datos o sobre el uso de la Inteligencia Artificial en la plataforma, por favor envíe un correo electrónico a nuestro oficial de privacidad:

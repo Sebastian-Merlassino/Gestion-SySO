@@ -32,7 +32,7 @@ export default function CookiesPage() {
         {/* Content */}
         <div className="p-8 sm:p-10 space-y-8">
           <div className="border-b border-slate-100 pb-4">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Última actualización: 14 de Agosto de 2026</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Última actualización: 28 de Agosto de 2026</p>
           </div>
 
           <section className="space-y-3">

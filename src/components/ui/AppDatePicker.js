@@ -41,14 +41,21 @@ export default function AppDatePicker({
 }) {
   const inputId = id || (label ? `datepicker-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}` : (name ? `datepicker-${name}` : undefined));
 
-  // Determinar valor para el input de texto
-  const displayValue = value || '';
+  // Determinar valor para el input de texto (siempre mostrar formato visual DD/MM/AAAA)
+  let displayValue = '';
+  if (value) {
+    if (/^\d{4}-\d{2}-\d{2}/.test(String(value))) {
+      displayValue = formatDate(value);
+    } else {
+      displayValue = String(value);
+    }
+  }
 
-  // Determinar valor ISO para el input de tipo date oculto/overlay
+  // Determinar valor ISO para el input de tipo date nativo oculto/overlay
   let isoValue = '';
   if (value) {
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      isoValue = value;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
+      isoValue = String(value);
     } else {
       isoValue = convertToDbDate(value) || '';
     }
@@ -58,16 +65,24 @@ export default function AppDatePicker({
   const handleTextChange = (e) => {
     if (disabled) return;
     const rawVal = e.target.value;
-    let formattedVal = mode === 'dmy' ? formatAsDateInput(rawVal) : rawVal;
+    const formattedVal = formatAsDateInput(rawVal);
 
     if (onChange) {
-      // Soporta llamada directa onChange(e) o onChange(val)
+      let emitVal = formattedVal;
+      if (mode === 'ymd') {
+        if (formattedVal.length === 10) {
+          emitVal = convertToDbDate(formattedVal) || formattedVal;
+        } else {
+          emitVal = formattedVal;
+        }
+      }
+
       const syntheticEvent = {
         ...e,
         target: {
           ...e.target,
           name: name || '',
-          value: formattedVal,
+          value: emitVal,
         },
       };
       onChange(syntheticEvent);
@@ -82,10 +97,7 @@ export default function AppDatePicker({
 
     if (selectedIso) {
       if (mode === 'dmy') {
-        const parts = selectedIso.split('-');
-        if (parts.length === 3) {
-          nextValue = `${parts[2]}/${parts[1]}/${parts[0]}`;
-        }
+        nextValue = formatDate(selectedIso);
       } else {
         nextValue = selectedIso;
       }

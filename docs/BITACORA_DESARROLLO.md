@@ -1,3 +1,81 @@
+## [2026-08-28] Módulo de Facturación Electrónica ARCA (ex AFIP), Seguimiento de Cobranzas, Reorganización de Sidebar y Actualización Legal
+
+### Resumen de Cambios
+- **Módulo Integral de Facturación Electrónica ARCA (ex AFIP):**
+  - Implementación de clientes SOAP nativos para los servicios web de ARCA: WSAA (Autenticación y Tickets de Acceso con PKCS#7 / CMS) y WSFEv1 (Autorización de Comprobantes Electrónicos con CAE).
+  - Soporte para emisión individual y masiva con Excel para Facturas A, B, C y Notas de Crédito.
+  - Generación de comprobantes PDF oficiales con QR oficial de ARCA conforme a RG 4291/2018 y colores de marca del tenant.
+  - Panel interactivo de Análisis de Facturación Anual/Mensual, distribución geográfica por jurisdicción y control de cobranzas (estados Pagada/Pendiente, fechas y métodos de pago).
+  - Modal de detalle de facturación, impresión directa y despacho automático por Correo y WhatsApp (`AppSendModal`).
+  - Reconciliación automática y manual para comprobantes con errores de conexión.
+  - Configuración y validación de Certificados Digitales X.509 (.crt) y Claves Privadas (.key) de producción.
+- **Estandarización de Diseño e Integración UI:**
+  - Estandarización de botones de acción de tabla (`size="icon"`, `h-4.5 w-4.5`, `gap-1.5`, `document-table`, `delete-table`, `edit-table`) idénticos a *Checklist Personalizados*.
+  - Reubicación del ítem **Facturación ARCA** en la barra lateral (`Sidebar.js`) inmediatamente debajo de **Nómina de Personal**.
+  - Inclusión del módulo en las tarjetas de planes comerciales (*Plan Básico*, *Plan Estándar / Profesional* y *Plan Full*) en `dashboard/page.js`, `onboarding/page.js` y `profile/page.js`.
+- **Actualizaciones Legales y de Privacidad:**
+  - **Términos y Condiciones (`/terminos`):** Incorporación de la sección 6 dedicada a la validez legal y responsabilidad fiscal de los comprobantes emitidos ante ARCA.
+  - **Política de Privacidad (`/privacidad`):** Incorporación de la sección 5 sobre el tratamiento seguro, confidencial y aislamiento multi-tenant de certificados digitales y claves fiscales.
+  - **Política de Cookies (`/cookies`):** Actualización de fecha y revisión de coherencia técnica.
+
+### Decisiones Clave
+- Utilizar exclusivamente el entorno de producción para simplificar la experiencia del usuario y evitar confusiones con certificados de homologación.
+- Almacenamiento seguro y aislado de certificados en base de datos bajo políticas RLS por organización (tenant).
+- Cumplimiento estricto del sistema de diseño (Design System) unificado de la plataforma.
+
+### Skills Utilizadas
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] src/app/[tenant-slug]/facturacion/page.js`
+- `[NEW] src/app/[tenant-slug]/facturacion/components/FacturaDetalleModal.js`
+- `[NEW] src/app/[tenant-slug]/facturacion/components/SeguimientoFacturacion.js`
+- `[NEW] src/app/[tenant-slug]/facturacion/components/ModalEmisionMasiva.js`
+- `[NEW] src/app/[tenant-slug]/facturacion/components/ModalConfigFacturacion.js`
+- `[NEW] src/app/[tenant-slug]/facturacion/utils/facturaPdfGenerator.js`
+- `[NEW] src/lib/arca/soapClient.js`
+- `[NEW] src/lib/arca/wsaa.js`
+- `[NEW] src/lib/arca/wsfe.js`
+- `[NEW] src/lib/arca/arcaClient.js`
+- `[NEW] src/app/api/facturacion/*`
+- `[MODIFY] src/components/Sidebar.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] src/app/terminos/page.js`
+- `[MODIFY] src/app/privacidad/page.js`
+- `[MODIFY] src/app/cookies/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación completa de Next.js (`npm run build`) exitosa con código 0.
+
+---
+
+## [2026-08-27] Corrección de Label Duplicado en Fecha de Nacimiento (Onboarding)
+
+### Resumen de Cambios
+- **Corrección de etiqueta duplicada en `src/app/onboarding/page.js`:**
+  - Se removió la etiqueta `<label>` externa redundante sobre el componente `<AppDatePicker>`, ya que `AppDatePicker` incluye internamente su propio renderizado de `<AppLabel>` cuando se le pasa la prop `label="Fecha de Nacimiento"`.
+  - Con este cambio, el campo ahora muestra una sola etiqueta estandarizada y consistente con el resto de los formularios del sistema.
+
+### Decisiones Clave
+- Delegar la renderización del label a `AppDatePicker` respetando los estándares de componentes UI del proyecto.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Revisión de diff de código y validación visual según la captura provista.
+
+---
+
 ## [2026-08-26] Integración del Logotipo Oficial Embebido (CID) en Pie de Correos
 
 ### Resumen de Cambios

@@ -1114,9 +1114,6 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Fecha de Nacimiento <span className="text-[#468DFF]">*</span>
-                </label>
                 <AppDatePicker
                   id="birthDate"
                   label="Fecha de Nacimiento"
@@ -1844,6 +1841,7 @@ export default function OnboardingPage() {
                       <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
                       <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Extintores + PDF</li>
                       <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
+                      <li className="flex items-center gap-2 font-bold text-[#468DFF]"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Facturación ARCA (ex AFIP)</li>
                     </ul>
                   </div>
                   <AppButton
@@ -1883,6 +1881,7 @@ export default function OnboardingPage() {
                       <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
                       <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Constancias de Visita</li>
                       <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Avisos de Riesgo</li>
+                      <li className="flex items-center gap-2 font-bold text-[#468DFF]"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Facturación ARCA (ex AFIP)</li>
                     </ul>
                   </div>
                   <AppButton
@@ -1925,6 +1924,7 @@ export default function OnboardingPage() {
                       <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Check list personalizados</li>
                       <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Legajo técnico online</li>
                       <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Portal de clientes</li>
+                      <li className="flex items-center gap-2 font-bold text-[#468DFF]"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Facturación ARCA (ex AFIP)</li>
                     </ul>
                   </div>
                   <AppButton
