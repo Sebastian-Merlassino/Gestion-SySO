@@ -88,17 +88,49 @@ const PROVINCIAS_ARGENTINAS = [
   'TUCUMÁN'
 ];
 
-const normalizePermisos = (perms) => {
-  const sections = ['empresas', 'equipo', 'programa', 'capacitacion', 'correctivas', 'extintores', 'control_electrico', 'visitas', 'avisos', 'legajo', 'nomina', 'checklist_personalizados'];
+export const SECCIONES_PERMISOS = [
+  { key: 'empresas', name: 'Clientes / Empresas' },
+  { key: 'equipo', name: 'Equipo de Trabajo' },
+  { key: 'programa', name: 'Prog. de Gestión Anual' },
+  { key: 'capacitacion', name: 'Prog. de Capacitación Anual' },
+  { key: 'capacitaciones_online', name: 'Capacitaciones Online' },
+  { key: 'correctivas', name: 'Acciones Correctivas' },
+  { key: 'accidentes', name: 'Accidentes' },
+  { key: 'matriz_riesgos', name: 'Matriz de Riesgos' },
+  { key: 'extintores', name: 'Control de Extintores' },
+  { key: 'control_electrico', name: 'Control Eléctrico' },
+  { key: 'visitas', name: 'Constancias de Visita' },
+  { key: 'avisos', name: 'Avisos de Riesgo' },
+  { key: 'checklist_personalizados', name: 'Checklist Personalizados' },
+  { key: 'protocolo_iluminacion', name: 'Protocolo de Iluminación' },
+  { key: 'protocolo_ruido', name: 'Protocolo de Ruido' },
+  { key: 'protocolo_ergonomia', name: 'Protocolo de Ergonomía' },
+  { key: 'protocolo_puesta_a_tierra', name: 'Protocolo de Puesta a Tierra' },
+  { key: 'legajo', name: 'Legajo Técnico' },
+  { key: 'nomina', name: 'Nómina de Personal' },
+  { key: 'facturacion', name: 'Facturación ARCA' }
+];
+
+export const getDefaultPermisos = (defaultValue = true) => {
+  const perms = {};
+  SECCIONES_PERMISOS.forEach(sec => {
+    perms[sec.key] = { cargar: defaultValue, editar: defaultValue, eliminar: defaultValue };
+  });
+  return perms;
+};
+
+export const normalizePermisos = (perms) => {
   const normalized = {};
-  sections.forEach(sec => {
-    const val = perms?.[sec];
+  SECCIONES_PERMISOS.forEach(sec => {
+    const key = sec.key;
+    const hyphenKey = key.replace(/_/g, '-');
+    const val = perms?.[key] !== undefined ? perms?.[key] : perms?.[hyphenKey];
     if (val === true || val === undefined) {
-      normalized[sec] = { cargar: true, editar: true, eliminar: true };
+      normalized[key] = { cargar: true, editar: true, eliminar: true };
     } else if (val === false) {
-      normalized[sec] = { cargar: false, editar: false, eliminar: false };
+      normalized[key] = { cargar: false, editar: false, eliminar: false };
     } else {
-      normalized[sec] = {
+      normalized[key] = {
         cargar: val.cargar === true,
         editar: val.editar === true,
         eliminar: val.eliminar === true
@@ -186,21 +218,7 @@ export default function EquipoPage({ params }) {
   const [fotoFirma, setFotoFirma] = useState(null);
   const [fotoFirmaPreview, setFotoFirmaPreview] = useState('');
 
-  // Permisos de edición por sección
-  const [permisos, setPermisos] = useState({
-    empresas: { cargar: true, editar: true, eliminar: true },
-    equipo: { cargar: true, editar: true, eliminar: true },
-    programa: { cargar: true, editar: true, eliminar: true },
-    capacitacion: { cargar: true, editar: true, eliminar: true },
-    correctivas: { cargar: true, editar: true, eliminar: true },
-    extintores: { cargar: true, editar: true, eliminar: true },
-    control_electrico: { cargar: true, editar: true, eliminar: true },
-    visitas: { cargar: true, editar: true, eliminar: true },
-    avisos: { cargar: true, editar: true, eliminar: true },
-    legajo: { cargar: true, editar: true, eliminar: true },
-    nomina: { cargar: true, editar: true, eliminar: true },
-    checklist_personalizados: { cargar: true, editar: true, eliminar: true }
-  });
+  const [permisos, setPermisos] = useState(getDefaultPermisos(true));
 
   // Matrículas
   const [matriculas, setMatriculas] = useState([
@@ -667,20 +685,8 @@ export default function EquipoPage({ params }) {
     setSignatureUrl('');
     setFotoFirma(null);
     setFotoFirmaPreview('');
-    setPermisos({
-      empresas: { cargar: true, editar: true, eliminar: true },
-      equipo: { cargar: true, editar: true, eliminar: true },
-      programa: { cargar: true, editar: true, eliminar: true },
-      capacitacion: { cargar: true, editar: true, eliminar: true },
-      correctivas: { cargar: true, editar: true, eliminar: true },
-      extintores: { cargar: true, editar: true, eliminar: true },
-      control_electrico: { cargar: true, editar: true, eliminar: true },
-      visitas: { cargar: true, editar: true, eliminar: true },
-      avisos: { cargar: true, editar: true, eliminar: true },
-      legajo: { cargar: true, editar: true, eliminar: true },
-      nomina: { cargar: true, editar: true, eliminar: true },
-      checklist_personalizados: { cargar: true, editar: true, eliminar: true }
-    });
+    const initialPerms = getDefaultPermisos(true);
+    setPermisos(initialPerms);
     setMatriculas([
       {
         id: null,
@@ -706,20 +712,7 @@ export default function EquipoPage({ params }) {
       localidad: '',
       tieneAcceso: false,
       signatureUrl: '',
-      permisos: {
-        empresas: { cargar: true, editar: true, eliminar: true },
-        equipo: { cargar: true, editar: true, eliminar: true },
-        programa: { cargar: true, editar: true, eliminar: true },
-        capacitacion: { cargar: true, editar: true, eliminar: true },
-        correctivas: { cargar: true, editar: true, eliminar: true },
-        extintores: { cargar: true, editar: true, eliminar: true },
-        control_electrico: { cargar: true, editar: true, eliminar: true },
-        visitas: { cargar: true, editar: true, eliminar: true },
-        avisos: { cargar: true, editar: true, eliminar: true },
-        legajo: { cargar: true, editar: true, eliminar: true },
-        nomina: { cargar: true, editar: true, eliminar: true },
-        checklist_personalizados: { cargar: true, editar: true, eliminar: true }
-      },
+      permisos: initialPerms,
       matriculas: [{ institucion: '', numero: '', vencimiento: '', fotoFrentePreview: '', fotoDorsoPreview: '', fotoFrentePath: '', fotoDorsoPath: '' }]
     });
 
@@ -733,20 +726,7 @@ export default function EquipoPage({ params }) {
       partido: '',
       localidad: '',
       tieneAcceso: false,
-      permisos: {
-        empresas: { cargar: true, editar: true, eliminar: true },
-        equipo: { cargar: true, editar: true, eliminar: true },
-        programa: { cargar: true, editar: true, eliminar: true },
-        capacitacion: { cargar: true, editar: true, eliminar: true },
-        correctivas: { cargar: true, editar: true, eliminar: true },
-        extintores: { cargar: true, editar: true, eliminar: true },
-        control_electrico: { cargar: true, editar: true, eliminar: true },
-        visitas: { cargar: true, editar: true, eliminar: true },
-        avisos: { cargar: true, editar: true, eliminar: true },
-        legajo: { cargar: true, editar: true, eliminar: true },
-        nomina: { cargar: true, editar: true, eliminar: true },
-        checklist_personalizados: { cargar: true, editar: true, eliminar: true }
-      },
+      permisos: initialPerms,
       matriculas: [{ institucion: '', numero: '', vencimiento: '' }]
     });
 
@@ -1794,26 +1774,12 @@ export default function EquipoPage({ params }) {
                       <button
                         type="button"
                         onClick={() => {
-                          const allSelected = Object.values(permisos).every(v => v.cargar && v.editar && v.eliminar);
-                          const targetVal = !allSelected;
-                          setPermisos({
-                            empresas: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
-                            equipo: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
-                            programa: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
-                            capacitacion: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
-                            correctivas: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
-                            extintores: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
-                            control_electrico: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
-                            visitas: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
-                            avisos: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
-                            legajo: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
-                            nomina: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
-                            checklist_personalizados: { cargar: targetVal, editar: targetVal, eliminar: targetVal }
-                          });
+                          const allSelected = Object.values(permisos).every(v => v?.cargar && v?.editar && v?.eliminar);
+                          setPermisos(getDefaultPermisos(!allSelected));
                         }}
                         className="text-[10px] font-bold text-[#468DFF] hover:underline cursor-pointer bg-transparent border-none outline-none"
                       >
-                        {Object.values(permisos).every(v => v.cargar && v.editar && v.eliminar) ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
+                        {Object.values(permisos).every(v => v?.cargar && v?.editar && v?.eliminar) ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
                       </button>
                     </div>
 
@@ -1826,20 +1792,7 @@ export default function EquipoPage({ params }) {
                         <div className="text-center">Eliminar</div>
                       </div>
 
-                      {[
-                        { key: 'empresas', name: 'Clientes / Empresas' },
-                        { key: 'equipo', name: 'Equipo de Trabajo' },
-                        { key: 'programa', name: 'Prog. de Gestión Anual' },
-                        { key: 'capacitacion', name: 'Prog. de Capacitación' },
-                        { key: 'correctivas', name: 'Acciones Correctivas' },
-                        { key: 'extintores', name: 'Control de Extintores' },
-                        { key: 'control_electrico', name: 'Control Eléctrico' },
-                        { key: 'checklist_personalizados', name: 'Checklist Personalizados' },
-                        { key: 'visitas', name: 'Constancias de Visita' },
-                        { key: 'avisos', name: 'Avisos de Riesgo' },
-                        { key: 'legajo', name: 'Legajo Técnico' },
-                        { key: 'nomina', name: 'Nómina de Personal' }
-                      ].map((section) => (
+                      {SECCIONES_PERMISOS.map((section) => (
                         <div key={section.key} className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-center p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
                           <div className="text-xs font-bold text-slate-700">{section.name}</div>
                           

@@ -68,7 +68,7 @@ export default function CapacitacionesOnlinePage({ params }) {
     if (!userProfile) return { cargar: true, editar: true, eliminar: true };
     if (userProfile.role === 'cliente') return { cargar: false, editar: false, eliminar: false };
     if (userProfile.role === 'admin') return { cargar: true, editar: true, eliminar: true };
-    const perm = userProfile.permisos?.[sectionName];
+    const perm = userProfile.permisos?.[sectionName] || userProfile.permisos?.[sectionName.replace(/-/g, '_')];
     if (perm === true || perm === undefined) return { cargar: true, editar: true, eliminar: true };
     if (perm === false) return { cargar: false, editar: false, eliminar: false };
     return {

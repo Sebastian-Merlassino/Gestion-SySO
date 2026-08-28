@@ -79,12 +79,32 @@ export default function FacturacionPage({ params }) {
     }
   };
 
+  // Permisos granulares de edición
+  const getSectionPermissions = (userProfile, sectionName) => {
+    if (!userProfile) return { cargar: true, editar: true, eliminar: true };
+    if (userProfile.role === 'admin') return { cargar: true, editar: true, eliminar: true };
+    if (userProfile.role === 'cliente') return { cargar: false, editar: false, eliminar: false };
+    const perm = userProfile.permisos?.[sectionName] || userProfile.permisos?.[sectionName.replace(/-/g, '_')];
+    if (perm === true || perm === undefined) return { cargar: true, editar: true, eliminar: true };
+    if (perm === false) return { cargar: false, editar: false, eliminar: false };
+    return {
+      cargar: perm.cargar === true,
+      editar: perm.editar === true,
+      eliminar: perm.eliminar === true
+    };
+  };
+
   // Estados estructurales
   const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const sectionPerms = getSectionPermissions(profile, 'facturacion');
+  const canCargar = sectionPerms.cargar;
+  const canEditar = sectionPerms.editar;
+  const canEliminar = sectionPerms.eliminar;
 
   // Sub-vistas: 'table' (lista principal), 'form' (nueva factura), 'masiva' (excel), 'config' (arca setup), 'reconciliacion', 'auditoria'
   const [currentView, setCurrentView] = useState('table');
@@ -469,6 +489,10 @@ export default function FacturacionPage({ params }) {
 
   // Manejador: Eliminar Factura / Comprobante
   const handleDeleteFactura = async (facturaId) => {
+    if (!canEliminar) {
+      globalToast.toast('No tienes permisos para eliminar comprobantes.', 'error');
+      return;
+    }
     try {
       const { error } = await supabase
         .from('facturas')

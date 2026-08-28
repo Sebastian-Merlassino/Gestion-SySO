@@ -1,3 +1,40 @@
+## [2026-08-28] Actualización Integral de Secciones en Permisos de Edición de Equipo de Trabajo
+
+### Resumen de Cambios
+- **Incorporación de las 20 Secciones Completas de la Plataforma en Equipo de Trabajo:**
+  - Se actualizó el formulario de edición y alta de integrantes en `src/app/[tenant-slug]/equipo/page.js` para incluir los 8 módulos y protocolos faltantes: *Capacitaciones Online*, *Accidentes*, *Matriz de Riesgos*, *Protocolo de Iluminación*, *Protocolo de Ruido*, *Protocolo de Ergonomía*, *Protocolo de Puesta a Tierra* y *Facturación ARCA*.
+  - Se centralizó el listado en la constante exportada `SECCIONES_PERMISOS` ordenada de forma idéntica a la barra lateral de navegación para consistencia UX.
+  - Se implementaron las funciones auxiliares `getDefaultPermisos(defaultValue = true)` y `normalizePermisos(perms)` con soporte retroactivo para claves tanto en `snake_case` como `kebab-case`.
+  - Se optimizó el botón **"Seleccionar Todos / Deseleccionar Todos"** y el comparador de cambios sin guardar (`checkHasUnsavedChanges`).
+- **Compatibilidad y Protección Granular en Módulos:**
+  - `src/app/[tenant-slug]/capacitaciones-online/page.js`: soporte normalizado para resolución de permisos por clave `capacitaciones_online` y `capacitaciones-online`.
+  - `src/app/[tenant-slug]/facturacion/page.js`: integración de `getSectionPermissions(profile, 'facturacion')` y protección de eliminación de comprobantes (`canEliminar`).
+- **Migración de Base de Datos Supabase:**
+  - Creación de `supabase/migrations/20260907000000_update_all_sections_permissions_default.sql` con actualización de esquemas JSONB por defecto y backfill seguro para `miembros_equipo` y `profiles`.
+
+### Decisiones Clave
+- Centralizar la lista de secciones para evitar desincronizaciones futuras al agregar nuevos módulos o protocolos.
+- Garantizar total compatibilidad hacia atrás para miembros creados previamente sin romper sus permisos existentes.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] src/app/[tenant-slug]/facturacion/page.js`
+- `[NEW] supabase/migrations/20260907000000_update_all_sections_permissions_default.sql`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación estática de código y estructura JSONB.
+- Compilación de producción (`npm run build`).
+
+---
+
 ## [2026-08-28] Módulo de Facturación Electrónica ARCA (ex AFIP), Seguimiento de Cobranzas, Reorganización de Sidebar y Actualización Legal
 
 ### Resumen de Cambios
