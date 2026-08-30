@@ -1,3 +1,95 @@
+## [2026-08-30] Remediación de Seguridad por Fases (Sin Interrupción de Servicio)
+
+### Resumen de Cambios
+- **Protección de Credenciales de SuperAdmin y Remoción de Variables Sensibles en Frontend (MED-03):**
+  - Se actualizó `src/lib/adminAuth.js` para priorizar la lectura de la variable de entorno de servidor `SUPERADMIN_EMAILS` sobre la variable de cliente `NEXT_PUBLIC_SUPERADMIN_EMAILS`.
+  - Se simplificó la resolución de renderizado de la consola SuperAdmin en `src/components/Sidebar.js`, eliminando comprobaciones redundantes por email hardcodeado y apoyándose exclusivamente en la bandera de perfil `profile.is_superadmin` verificada por RLS.
+  - Se actualizó `.env.example` eliminando la sugerencia de la variable `NEXT_PUBLIC_SUPERADMIN_EMAILS`.
+
+- **Refuerzo de Rate Limiting y Diagnóstico CSRF en Middleware (ALT-02, MED-02):**
+  - Se refinó la condición en `src/middleware.js` para asegurar que el Rate Limiting aplique en todos los entornos de despliegue (incluyendo Vercel Preview / Staging) y únicamente se omita en ejecuciones de desarrollo local real (donde `NODE_ENV === 'development'` y no existe la variable `VERCEL_ENV`).
+  - Se mejoró el mensaje de advertencia del validador CSRF en `src/middleware.js` para alertar explícitamente en logs si `APP_URL` no está definida en Vercel.
+
+### Decisiones Clave
+- Ejecutar una remediación de impacto cero en disponibilidad productiva, preservando intacta la lógica de autorización server-side (`verifySuperAdminServer`) y evitando cualquier disrupción de servicio.
+- Descartar hallazgos falsos positivos (como la supuesta falta de `getUser()` en API routes) tras auditoría línea por línea.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/lib/adminAuth.js`
+- `[MODIFY] src/components/Sidebar.js`
+- `[MODIFY] src/middleware.js`
+- `[MODIFY] .env.example`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build`) completada con código 0 y 35 páginas estáticas/dinámicas generadas limpiamente.
+
+---
+
+## [2026-08-29] Auditoría y Corrección Integral de Formatos de Fecha (ISO YYYY-MM-DD) para Supabase Postgres
+
+### Resumen de Cambios
+- **Auditoría Exhaustiva de Toda la Aplicación:**
+  - Se revisaron todos los módulos y formularios que interactúan con Supabase Postgres (`.insert()` y `.update()`).
+  - Se identificó la causa raíz del error HTTP 400 Bad Request (`code: 22008 - date/time field value out of range: "16/06/2026"`): la función `convertToDbDate` en `src/lib/utils.js` no procesaba cadenas en formato argentino `DD/MM/YYYY` antes de intentar llamar a `new Date(dateString)`.
+  
+- **Normalización de `convertToDbDate` en `src/lib/utils.js`:**
+  - Se mejoró la función `convertToDbDate` para detectar patrones `DD/MM/YYYY` de 3 partes separadas por `/` o `-` y convertirlas confiablemente a `YYYY-MM-DD`.
+
+- **Corrección de Módulos Específicos:**
+  - **`equipo/page.js`**: `birth_date` y `vencimiento` usan `convertToDbDate`.
+  - **`nomina-personal/page.js`**: Se corrigió el mapeo de carga masiva por planilla Excel y edición individual para que todas las fechas (`fecha_nacimiento`, `fecha_ingreso`, `fecha_baja`, `fecha_alta_afip`, `fecha_baja_afip`, `fecha_examen_periodico`, `fecha_entrega_epp`) pasen por `convertToDbDate`.
+  - **`visitas/page.js`, `matriz-riesgos/page.js`, `legajo/page.js`, `extintores/page.js`, `correctivas/page.js`, `control-electrico/page.js`, `checklist-personalizados/page.js`, `capacitacion/page.js`, `avisos/page.js`, `accidentes/page.js`, `profile/page.js`, `onboarding/page.js` y Formularios de Protocolos (`iluminacion`, `ruido`, `puesta-a-tierra`, `ergonomia`)**: Verificados y confirmados utilizando `convertToDbDate` correctamente.
+
+### Decisiones Clave
+- Mantener una conversión uniforme de `DD/MM/YYYY` -> `YYYY-MM-DD` a nivel utilitario server-side/client-side antes de realizar cualquier operación `insert` o `update` a Postgres via Supabase REST API.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/lib/utils.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina-personal/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación de la función `convertToDbDate` y compilación de producción con `npm run build`.
+
+---
+
+## [2026-08-29] Corrección de Espacio Vacío y Estandarización de Layout en Tabla de Facturación (Móvil)
+
+### Resumen de Cambios
+- **Corrección de alineación, espaciado y desfase visual en móvil (Facturación):**
+  - Se igualó la estructura del contenedor padre principal a `space-y-0 md:space-y-6` en `src/app/[tenant-slug]/facturacion/page.js` (reemplazando la clase fija `space-y-4`), acoplando de forma continua la tarjeta de filtros y la tabla en móviles (`< md`), tal como se implementa en todas las demás secciones del SaaS (*Nómina de Personal*, *Constancias de Visita*, *Medidas Correctivas*, etc.).
+  - Se removió la directiva `sticky top-0 z-10 bg-slate-50 border-b border-slate-200` de la fila contenedora (`<tr>`) de cabecera en `src/app/[tenant-slug]/facturacion/page.js`.
+  - Se aplicó la directiva `sticky top-0 z-10 bg-slate-50 border-b border-slate-200` de manera individual a cada celda `<th>` de la cabecera de la tabla.
+
+### Decisiones Clave
+- Mantener estricta alineación con el patrón de maquetación móvil unificado de la plataforma (*SySO Compact Layout v2.0*) eliminando cualquier espacio de fondo innecesario entre tarjetas en pantallas reducidas.
+
+### Skills Utilizadas
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-bitacora`
+- `ui-ux-pro-max`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/facturacion/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción (`npm run build`) verificando que no existan errores sintácticos o de referencias en el componente.
+
+---
+
 ## [2026-08-28] Actualización Integral de Secciones en Permisos de Edición de Equipo de Trabajo
 
 ### Resumen de Cambios

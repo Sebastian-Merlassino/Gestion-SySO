@@ -190,10 +190,8 @@ export default function Sidebar({
 
   const isSuperAdmin = Boolean(
     mounted && (
-      checkIsSuperAdmin(currentUserEmail || profile?.email, profile) ||
-      (currentUserEmail && currentUserEmail.toLowerCase() === 'sebastian.merlassino@gestionsyso.com') ||
-      (profile?.email && profile.email.toLowerCase() === 'sebastian.merlassino@gestionsyso.com') ||
-      profile?.is_superadmin === true
+      profile?.is_superadmin === true ||
+      checkIsSuperAdmin(currentUserEmail || profile?.email, profile)
     )
   );
 

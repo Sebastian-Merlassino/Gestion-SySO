@@ -9,8 +9,8 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPA
  */
 export function getSuperAdminEmails() {
   const envEmails = 
-    process.env.NEXT_PUBLIC_SUPERADMIN_EMAILS || 
     process.env.SUPERADMIN_EMAILS || 
+    process.env.NEXT_PUBLIC_SUPERADMIN_EMAILS || 
     'sebastian.merlassino@gestionsyso.com';
     
   return envEmails

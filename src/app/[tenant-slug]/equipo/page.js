@@ -1109,7 +1109,7 @@ export default function EquipoPage({ params }) {
         email,
         cuit,
         phone,
-        birth_date: birthDate || null,
+        birth_date: convertToDbDate(birthDate),
         provincia,
         partido: partido || null,
         localidad: localidad || null,
@@ -1188,7 +1188,7 @@ export default function EquipoPage({ params }) {
           profile_id: linkedProfileId || null,
           institucion: m.institucion,
           numero: m.numero,
-          vencimiento: m.vencimiento || null,
+          vencimiento: convertToDbDate(m.vencimiento),
           foto_frente_url: m.fotoFrentePreview || null,
           foto_dorso_url: m.fotoDorsoPreview || null
         }));

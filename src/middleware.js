@@ -47,8 +47,8 @@ export async function middleware(request) {
     return res;
   };
 
-  // 1. Rate Limiting para APIs (se ejecuta antes de cualquier consulta a base de datos/auth, omitido en desarrollo)
-  if (pathname.startsWith('/api/') && process.env.NODE_ENV !== 'development') {
+  // 1. Rate Limiting para APIs (se ejecuta antes de cualquier consulta a base de datos/auth, omitido solo en desarrollo local sin Vercel)
+  if (pathname.startsWith('/api/') && !(process.env.NODE_ENV === 'development' && !process.env.VERCEL_ENV)) {
     const ipHeader = request.headers.get('x-forwarded-for');
     const ip = request.ip || (ipHeader ? ipHeader.split(',')[0].trim() : '127.0.0.1');
 
@@ -94,9 +94,9 @@ export async function middleware(request) {
     const referer = request.headers.get('referer');
     const appUrl = process.env.APP_URL || request.nextUrl.origin;
 
-    // En producción/staging, emitir advertencia si APP_URL no está configurada pero usar request.nextUrl.origin
-    if (!process.env.APP_URL && process.env.NODE_ENV !== 'development') {
-      console.warn('[CSRF Warning] APP_URL no configurada en variables de entorno. Usando origen de la solicitud:', request.nextUrl.origin);
+    // En producción/staging en Vercel, emitir advertencia explicita si APP_URL no esta configurada
+    if (!process.env.APP_URL && process.env.VERCEL_ENV) {
+      console.error('[CSRF CRITICAL] APP_URL no configurada en variables de entorno de Vercel. Se utiliza fallback al origen de la solicitud.');
     }
 
     let isMatch = false;

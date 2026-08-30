@@ -1233,7 +1233,7 @@ export default function FacturacionPage({ params }) {
 
             {/* VISTA PRINCIPAL: TABLA DE FACTURAS (SySO Compact Layout v2.0) */}
             {currentView === 'table' && (
-              <div className="flex flex-col flex-grow min-h-0 w-full animate-fade-in space-y-4">
+              <div className="space-y-0 md:space-y-6 flex-grow flex flex-col min-h-0 w-full animate-fade-in">
                 
                 {/* PANEL DE FILTROS (SySO Compact Layout v2.0) */}
                 <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl px-3.5 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 shadow-sm space-y-2.5 shrink-0">
@@ -1458,41 +1458,41 @@ export default function FacturacionPage({ params }) {
                     ) : (
                       <table className="w-full text-left border-collapse min-w-[1000px]">
                         <thead>
-                          <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider select-none sticky top-0 z-10">
-                            <th className="px-5 py-3.5 cursor-pointer hover:text-slate-700" onClick={() => handleSort('tipo_comprobante')}>
+                          <tr className="text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
+                            <th className="px-5 py-3.5 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('tipo_comprobante')}>
                               <div className="flex items-center gap-1.5">
                                 Comprobante
                                 <AppSortIcon field="tipo_comprobante" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
-                            <th className="px-5 py-3.5 cursor-pointer hover:text-slate-700" onClick={() => handleSort('fecha_emision')}>
+                            <th className="px-5 py-3.5 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('fecha_emision')}>
                               <div className="flex items-center gap-1.5">
                                 Fecha
                                 <AppSortIcon field="fecha_emision" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
-                            <th className="px-5 py-3.5 cursor-pointer hover:text-slate-700" onClick={() => handleSort('cliente')}>
+                            <th className="px-5 py-3.5 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('cliente')}>
                               <div className="flex items-center gap-1.5">
                                 Cliente / Receptor
                                 <AppSortIcon field="cliente" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
-                            <th className="px-5 py-3.5">
+                            <th className="px-5 py-3.5 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">
                               Descripción / Concepto
                             </th>
-                            <th className="px-5 py-3.5">
+                            <th className="px-5 py-3.5 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">
                               CAE / Fiscal
                             </th>
-                            <th className="px-5 py-3.5 text-center">
+                            <th className="px-5 py-3.5 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-200">
                               Estado de Cobro
                             </th>
-                            <th className="px-5 py-3.5 text-right cursor-pointer hover:text-slate-700" onClick={() => handleSort('total')}>
+                            <th className="px-5 py-3.5 text-right cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('total')}>
                               <div className="flex items-center justify-end gap-1.5">
                                 Importe Total
                                 <AppSortIcon field="total" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
-                            <th className="px-5 py-3.5 text-right">
+                            <th className="px-5 py-3.5 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-200">
                               Acciones
                             </th>
                           </tr>
