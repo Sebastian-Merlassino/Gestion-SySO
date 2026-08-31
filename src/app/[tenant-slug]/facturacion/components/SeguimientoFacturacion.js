@@ -622,7 +622,9 @@ export default function SeguimientoFacturacion({
                       {/* Comprobante */}
                       <td className="px-5 py-3.5 font-mono">
                         <span className="font-bold text-slate-900 block font-sans">{desc}</span>
-                        <span className="text-[11px] text-slate-500">{ptoVta}-{compNro}</span>
+                        <span className="text-[11px] text-slate-500">
+                          {f.tipo_comprobante === 99 ? `INT-${compNro}` : `${ptoVta}-${compNro}`}
+                        </span>
                       </td>
 
                       {/* Fecha */}

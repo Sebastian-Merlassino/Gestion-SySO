@@ -307,6 +307,9 @@ export default function NuevaFacturaForm({
                 <option value={1}>Factura A (Responsable Inscripto a Resp. Inscripto)</option>
                 <option value={6}>Factura B (Resp. Inscripto a Consumidor Final / Monotributo)</option>
               </optgroup>
+              <optgroup label="Comprobantes Internos (No Fiscales / Sin CAE)">
+                <option value={99}>Comprobante / Remito Interno (X) — Control y Seguimiento</option>
+              </optgroup>
               <optgroup label="Notas de Crédito">
                 <option value={13}>Nota de Crédito C</option>
                 <option value={3}>Nota de Crédito A</option>
@@ -340,10 +343,23 @@ export default function NuevaFacturaForm({
               Punto de Venta
             </label>
             <div className="px-3.5 py-2.5 text-xs font-bold rounded-xl border border-slate-200 bg-slate-100 text-slate-700">
-              Punto {String(config?.punto_venta || 1).padStart(4, '0')} (Web Services)
+              {tipoComprobante === 99 ? 'Punto 0001 (Interno)' : `Punto ${String(config?.punto_venta || 1).padStart(4, '0')} (Web Services)`}
             </div>
           </div>
         </div>
+
+        {/* Banner Informativo para Comprobante Interno */}
+        {tipoComprobante === 99 && (
+          <div className="mt-4 p-3.5 bg-purple-50 border border-purple-200/80 rounded-xl flex items-start gap-3 text-xs text-purple-900 animate-fade-in">
+            <span className="px-2 py-1 bg-purple-200 text-purple-800 rounded-lg font-extrabold text-xs shrink-0">X</span>
+            <div>
+              <p className="font-bold">Comprobante / Remito Interno (No Fiscal)</p>
+              <p className="text-purple-800 text-[11px] mt-0.5 leading-relaxed">
+                Este registro se guardará para control administrativo y seguimiento de cobranzas. <strong>No se comunica con los servidores de ARCA ni genera CAE fiscal.</strong>
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Service Date Range (only for Concepto 2 or 3) */}
         {concepto >= 2 && (
@@ -676,7 +692,11 @@ export default function NuevaFacturaForm({
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
         <div className="text-xs text-slate-500 flex items-center gap-1.5">
           <HelpCircle className="h-4 w-4 text-slate-400 shrink-0" />
-          <span>Al emitir, los datos se resguardan como borrador antes de solicitar CAE a ARCA.</span>
+          <span>
+            {tipoComprobante === 99
+              ? 'Registro interno: se guarda para control administrativo sin enviar a ARCA ni requerir CAE.'
+              : 'Al emitir, los datos se resguardan como borrador antes de solicitar CAE a ARCA.'}
+          </span>
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -693,32 +713,49 @@ export default function NuevaFacturaForm({
           <button
             type="submit"
             disabled={isSubmitting || totals.impTotal <= 0}
-            className="px-6 py-2.5 bg-[#468DFF] text-white hover:bg-[#0511F2] rounded-xl text-xs font-bold transition-all shadow-md shadow-[#468DFF]/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-initial"
+            className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-initial text-white ${
+              tipoComprobante === 99
+                ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/20'
+                : 'bg-[#468DFF] hover:bg-[#0511F2] shadow-[#468DFF]/20'
+            }`}
           >
-            <Send className="h-4 w-4" />
-            {isSubmitting
-              ? 'Emitiendo en ARCA...'
-              : [3, 8, 13].includes(tipoComprobante)
-              ? 'Emitir Nota de Crédito'
-              : 'Emitir Factura'}
+            {tipoComprobante === 99 ? (
+              <>
+                <CheckCircle2 className="h-4 w-4" />
+                {isSubmitting ? 'Registrando...' : 'Registrar Comprobante Interno'}
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4" />
+                {isSubmitting
+                  ? 'Emitiendo en ARCA...'
+                  : [3, 8, 13].includes(tipoComprobante)
+                  ? 'Emitir Nota de Crédito'
+                  : 'Emitir Factura'}
+              </>
+            )}
           </button>
         </div>
       </div>
 
-      {/* Modal de Confirmación y Revisión de Datos antes de emitir a ARCA */}
+      {/* Modal de Confirmación y Revisión de Datos */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 sm:p-6 space-y-4 animate-scale-up">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-              <div className="p-2 rounded-xl bg-blue-50 text-[#468DFF]">
-                <Send className="h-5 w-5" />
+              <div className={`p-2 rounded-xl ${tipoComprobante === 99 ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-[#468DFF]'}`}>
+                {tipoComprobante === 99 ? <CheckCircle2 className="h-5 w-5" /> : <Send className="h-5 w-5" />}
               </div>
               <div>
                 <h4 className="text-sm sm:text-base font-bold text-slate-800">
-                  ¿Confirmar Emisión en ARCA?
+                  {tipoComprobante === 99
+                    ? '¿Confirmar Registro Interno (X)?'
+                    : '¿Confirmar Emisión en ARCA?'}
                 </h4>
                 <p className="text-[11px] text-slate-400">
-                  Revisá el resumen del comprobante antes de solicitar CAE oficial.
+                  {tipoComprobante === 99
+                    ? 'Este comprobante se guardará para control y seguimiento de cobranzas (no fiscal).'
+                    : 'Revisá el resumen del comprobante antes de solicitar CAE oficial.'}
                 </p>
               </div>
             </div>
@@ -753,7 +790,7 @@ export default function NuevaFacturaForm({
               </div>
               <div className="pt-2 border-t border-slate-200 flex justify-between items-baseline">
                 <span className="font-bold text-slate-700">Importe Total:</span>
-                <span className="text-base font-extrabold text-[#468DFF] font-mono">
+                <span className={`text-base font-extrabold font-mono ${tipoComprobante === 99 ? 'text-purple-600' : 'text-[#468DFF]'}`}>
                   ${totals.impTotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
@@ -772,10 +809,14 @@ export default function NuevaFacturaForm({
                 type="button"
                 onClick={handleConfirmEmitir}
                 disabled={isSubmitting}
-                className="px-5 py-2 text-xs font-bold text-white bg-[#468DFF] hover:bg-[#0511F2] rounded-xl shadow-md shadow-[#468DFF]/20 transition-all cursor-pointer flex items-center gap-1.5"
+                className={`px-5 py-2 text-xs font-bold text-white rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                  tipoComprobante === 99
+                    ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/20'
+                    : 'bg-[#468DFF] hover:bg-[#0511F2] shadow-[#468DFF]/20'
+                }`}
               >
-                <Send className="h-3.5 w-3.5" />
-                Confirmar y Emitir
+                {tipoComprobante === 99 ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Send className="h-3.5 w-3.5" />}
+                {tipoComprobante === 99 ? 'Confirmar y Registrar' : 'Confirmar y Emitir'}
               </button>
             </div>
           </div>

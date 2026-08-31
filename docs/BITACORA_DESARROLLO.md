@@ -1,3 +1,36 @@
+## [2026-08-31] Soporte para Comprobantes / Remitos Internos (X) No Fiscales en Facturación
+
+### Resumen de Cambios
+- **Comprobante Interno (X) para Servicios no Facturados ante ARCA:**
+  - Se habilitó la opción **"Comprobante / Remito Interno (X) — Control y Seguimiento"** (código `99`) en el formulario de emisión de comprobantes (`NuevaFacturaForm.js`).
+  - Permite a los consultores registrar servicios y relevamientos técnicos realizados que no se facturan formalmente ante ARCA (por acuerdo o preferencia del cliente), facilitando su seguimiento completo de cobranzas y control de ingresos.
+  - El backend (`/api/facturacion/emitir`) procesa los comprobantes `X` de manera autónoma, asignando numeración correlativa interna (`INT-00000001`, `INT-00000002`...) y resguardando el registro en la base de datos sin requerir certificado digital de ARCA ni solicitar CAE.
+  - Se actualizó el generador de PDF (`facturaPdfGenerator.js`) para emitir documentos con letra **X**, encabezado de control no fiscal y pie de registro administrativo.
+  - En la tabla de comprobantes (`facturacion/page.js`) y en el panel de **Seguimiento de Cobranzas** (`SeguimientoFacturacion.js`), los comprobantes internos se identifican con distintivo púrpura `X`, insignia `🔵 Comprobante Interno`, se integran en los cálculos de ingresos/gráficos y se exportan en la planilla de Excel.
+
+### Decisiones Clave
+- Utilizar el código `99` (estándar común para documentos X) con letra `X` y numeración `INT-XXXXXXXX`.
+- Omitir llamadas a Web Services fiscales de ARCA cuando el tipo es `99`, agilizando la carga y permitiendo operar incluso sin certificado fiscal configurado.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260907000000_add_comprobante_interno.sql`
+- `[MODIFY] supabase/migrations/20260906000000_create_facturacion_arca.sql`
+- `[MODIFY] src/app/api/facturacion/emitir/route.js`
+- `[MODIFY] src/app/[tenant-slug]/facturacion/utils/facturaPdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/facturacion/components/NuevaFacturaForm.js`
+- `[MODIFY] src/app/[tenant-slug]/facturacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/facturacion/components/FacturaDetalleModal.js`
+- `[MODIFY] src/app/[tenant-slug]/facturacion/components/SeguimientoFacturacion.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build`) completada con código 0 y 35/35 páginas generadas con éxito.
+
 ## [2026-08-31] Lista Desplegable y Autocompletado Editable de Servicios SySO en Facturación
 
 ### Resumen de Cambios

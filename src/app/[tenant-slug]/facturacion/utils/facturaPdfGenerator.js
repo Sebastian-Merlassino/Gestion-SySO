@@ -17,6 +17,7 @@ export function getVoucherTypeDetails(cbteTipo) {
     3: { letra: 'A', desc: 'NOTA DE CRÉDITO A', codigo: '03' },
     8: { letra: 'B', desc: 'NOTA DE CRÉDITO B', codigo: '08' },
     13: { letra: 'C', desc: 'NOTA DE CRÉDITO C', codigo: '13' },
+    99: { letra: 'X', desc: 'COMPROBANTE / REMITO INTERNO', codigo: 'X', isInterno: true },
   };
   return map[cbteTipo] || { letra: 'C', desc: 'FACTURA C', codigo: '11' };
 }
@@ -384,7 +385,7 @@ export async function generateFacturaPdf({ factura, config, tenant = null, profi
   doc.text(`$ ${Number(factura?.imp_total || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`, totalsBoxX + totalsBoxWidth - 4, finalTableY + 22, { align: 'right' });
 
   // ==========================================
-  // 6. FISCAL FOOTER (CAE & ARCA)
+  // 6. FOOTER (CAE & ARCA OR INTERNAL TRACKING)
   // ==========================================
   const footerBoxY = pageHeight - 34;
   const footerBoxHeight = 24;
@@ -393,56 +394,94 @@ export async function generateFacturaPdf({ factura, config, tenant = null, profi
   setDrawColor(doc, PDF_THEME.border);
   doc.roundedRect(margin, footerBoxY, contentWidth, footerBoxHeight, 2, 2, 'FD');
 
-  // Embed official ARCA QR Code
-  try {
-    const qrPayloadUrl = generateArcaQrUrl({
-      fecha: factura?.fecha_emision || new Date().toISOString().split('T')[0],
-      cuitEmisor: config?.cuit || '20275366901',
-      ptoVta: factura?.punto_venta || config?.punto_venta || 1,
-      tipoCmp: factura?.tipo_comprobante || 11,
-      nroCmp: factura?.numero_comprobante || 0,
-      importe: factura?.imp_total || 0,
-      tipoDocRec: factura?.receptor_doc_tipo || 99,
-      nroDocRec: factura?.receptor_doc_nro || 0,
-      tipoCodAut: 'E',
-      codAut: factura?.cae || 0,
-    });
-    const QRCode = (await import('qrcode')).default || (await import('qrcode'));
-    const qrDataUrl = await QRCode.toDataURL(qrPayloadUrl, { margin: 0, width: 140 });
-    doc.addImage(qrDataUrl, 'PNG', margin + 3, footerBoxY + 2.5, 19, 19);
-  } catch (err) {
-    console.warn('QR code generation notice:', err);
+  if (details.isInterno) {
+    // Left Box: Internal badge
+    setFillColor(doc, [243, 244, 246]);
+    setDrawColor(doc, [209, 213, 219]);
+    doc.roundedRect(margin + 3, footerBoxY + 2.5, 19, 19, 1.5, 1.5, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    setTextColor(doc, primaryColor);
+    doc.text('X', margin + 12.5, footerBoxY + 11, { align: 'center' });
+    doc.setFontSize(5);
+    doc.text('INTERNO', margin + 12.5, footerBoxY + 16, { align: 'center' });
+
+    // Middle banner: Internal registration info
+    const middleX = margin + 25;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    setTextColor(doc, primaryColor);
+    doc.text('Comprobante de Control y Registro Interno', middleX, footerBoxY + 6.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    setTextColor(doc, PDF_THEME.textMuted);
+    doc.text('Documento no fiscal emitido para registro interno de servicios y seguimiento de cobranzas.', middleX, footerBoxY + 11.5);
+    doc.text(`Generado digitalmente por Gestión SySO — SaaS de Higiene y Seguridad Laboral`, middleX, footerBoxY + 16.5);
+
+    // Right column: Internal number and Date
+    const caeX = pageWidth - margin - 5;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    setTextColor(doc, PDF_THEME.textPrimary);
+    doc.text(`REGISTRO: INT-${formattedNro}`, caeX, footerBoxY + 8, { align: 'right' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    setTextColor(doc, PDF_THEME.textMuted);
+    doc.text(`Fecha: ${fechaEmisionStr}`, caeX, footerBoxY + 15.5, { align: 'right' });
+  } else {
+    // Embed official ARCA QR Code
+    try {
+      const qrPayloadUrl = generateArcaQrUrl({
+        fecha: factura?.fecha_emision || new Date().toISOString().split('T')[0],
+        cuitEmisor: config?.cuit || '20275366901',
+        ptoVta: factura?.punto_venta || config?.punto_venta || 1,
+        tipoCmp: factura?.tipo_comprobante || 11,
+        nroCmp: factura?.numero_comprobante || 0,
+        importe: factura?.imp_total || 0,
+        tipoDocRec: factura?.receptor_doc_tipo || 99,
+        nroDocRec: factura?.receptor_doc_nro || 0,
+        tipoCodAut: 'E',
+        codAut: factura?.cae || 0,
+      });
+      const QRCode = (await import('qrcode')).default || (await import('qrcode'));
+      const qrDataUrl = await QRCode.toDataURL(qrPayloadUrl, { margin: 0, width: 140 });
+      doc.addImage(qrDataUrl, 'PNG', margin + 3, footerBoxY + 2.5, 19, 19);
+    } catch (err) {
+      console.warn('QR code generation notice:', err);
+    }
+
+    // Middle banner: ARCA Authorization badge
+    const middleX = margin + 25;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    setTextColor(doc, primaryColor);
+    doc.text('Comprobante Autorizado por ARCA (ex AFIP)', middleX, footerBoxY + 6.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    setTextColor(doc, PDF_THEME.textMuted);
+    doc.text('Esta administración federal no se responsabiliza por los datos ingresados en el comprobante.', middleX, footerBoxY + 11.5);
+    doc.text(`Generado digitalmente por Gestión SySO — SaaS de Higiene y Seguridad Laboral`, middleX, footerBoxY + 16.5);
+
+    // Right column: CAE and Expiration
+    const caeX = pageWidth - margin - 5;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    setTextColor(doc, PDF_THEME.textPrimary);
+    doc.text(`CAE N°:  ${factura?.cae || '-'}`, caeX, footerBoxY + 8, { align: 'right' });
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    setTextColor(doc, PDF_THEME.textMuted);
+    const formattedCaeVto = factura?.cae_vencimiento
+      ? (typeof factura.cae_vencimiento === 'string' && factura.cae_vencimiento.includes('-')
+          ? factura.cae_vencimiento.split('T')[0].split('-').reverse().join('/')
+          : new Date(factura.cae_vencimiento).toLocaleDateString('es-AR'))
+      : '-';
+    doc.text(`Fecha de Vto. de CAE:  ${formattedCaeVto}`, caeX, footerBoxY + 15.5, { align: 'right' });
   }
-
-  // Middle banner: ARCA Authorization badge
-  const middleX = margin + 25;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  setTextColor(doc, primaryColor);
-  doc.text('Comprobante Autorizado por ARCA (ex AFIP)', middleX, footerBoxY + 6.5);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  setTextColor(doc, PDF_THEME.textMuted);
-  doc.text('Esta administración federal no se responsabiliza por los datos ingresados en el comprobante.', middleX, footerBoxY + 11.5);
-  doc.text(`Generado digitalmente por Gestión SySO — SaaS de Higiene y Seguridad Laboral`, middleX, footerBoxY + 16.5);
-
-  // Right column: CAE and Expiration
-  const caeX = pageWidth - margin - 5;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  setTextColor(doc, PDF_THEME.textPrimary);
-  doc.text(`CAE N°:  ${factura?.cae || '-'}`, caeX, footerBoxY + 8, { align: 'right' });
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  setTextColor(doc, PDF_THEME.textMuted);
-  const formattedCaeVto = factura?.cae_vencimiento
-    ? (typeof factura.cae_vencimiento === 'string' && factura.cae_vencimiento.includes('-')
-        ? factura.cae_vencimiento.split('T')[0].split('-').reverse().join('/')
-        : new Date(factura.cae_vencimiento).toLocaleDateString('es-AR'))
-    : '-';
-  doc.text(`Fecha de Vto. de CAE:  ${formattedCaeVto}`, caeX, footerBoxY + 15.5, { align: 'right' });
 
   // ==========================================
   // Output handling

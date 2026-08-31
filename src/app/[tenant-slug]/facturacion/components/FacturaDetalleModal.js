@@ -436,33 +436,57 @@ export default function FacturaDetalleModal({
           {/* Cuadro de Totales y CAE */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             
-            {/* Información Fiscal de ARCA (CAE) */}
-            <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-2">
-              <div className="flex items-center gap-1.5 font-bold text-emerald-900 text-xs border-b border-emerald-200 pb-1.5">
-                <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                <span>Autorización Fiscal ARCA</span>
-              </div>
-              <div className="space-y-1.5 text-[11px]">
-                <div className="flex justify-between items-center">
-                  <span className="text-emerald-800 font-medium">CAE N°:</span>
-                  <span className="font-mono font-bold text-emerald-950 bg-white px-2 py-0.5 rounded border border-emerald-200">
-                    {factura.cae || 'Sin CAE'}
-                  </span>
+            {/* Información Fiscal de ARCA (CAE) o Registro Interno */}
+            {factura.tipo_comprobante === 99 ? (
+              <div className="p-4 rounded-xl bg-purple-50/70 border border-purple-200 space-y-2">
+                <div className="flex items-center gap-1.5 font-bold text-purple-900 text-xs border-b border-purple-200 pb-1.5">
+                  <span className="px-1.5 py-0.5 rounded font-extrabold text-[10px] bg-purple-200 text-purple-800">X</span>
+                  <span>Comprobante de Registro Interno</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-emerald-800 font-medium">Fecha Vto. CAE:</span>
-                  <span className="font-mono font-semibold text-emerald-950">
-                    {formatDate(factura.cae_vencimiento)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-emerald-800 font-medium">Resultado:</span>
-                  <span className="font-bold text-emerald-700">
-                    {factura.resultado_arca === 'A' ? 'Aprobado Oficial' : (factura.resultado_arca || 'Pendiente')}
-                  </span>
+                <div className="space-y-1.5 text-[11px]">
+                  <div className="flex justify-between items-center">
+                    <span className="text-purple-800 font-medium">N° de Registro:</span>
+                    <span className="font-mono font-bold text-purple-950 bg-white px-2 py-0.5 rounded border border-purple-200">
+                      INT-{compNro}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-purple-800 font-medium">Tipo:</span>
+                    <span className="font-semibold text-purple-900">No Fiscal (Sin CAE)</span>
+                  </div>
+                  <p className="text-[10px] text-purple-700 pt-0.5">
+                    Comprobante administrativo emitido para seguimiento de servicios y cobranzas.
+                  </p>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-2">
+                <div className="flex items-center gap-1.5 font-bold text-emerald-900 text-xs border-b border-emerald-200 pb-1.5">
+                  <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                  <span>Autorización Fiscal ARCA</span>
+                </div>
+                <div className="space-y-1.5 text-[11px]">
+                  <div className="flex justify-between items-center">
+                    <span className="text-emerald-800 font-medium">CAE N°:</span>
+                    <span className="font-mono font-bold text-emerald-950 bg-white px-2 py-0.5 rounded border border-emerald-200">
+                      {factura.cae || 'Sin CAE'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-emerald-800 font-medium">Fecha Vto. CAE:</span>
+                    <span className="font-mono font-semibold text-emerald-950">
+                      {formatDate(factura.cae_vencimiento)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-emerald-800 font-medium">Resultado:</span>
+                    <span className="font-bold text-emerald-700">
+                      {factura.resultado_arca === 'A' ? 'Aprobado Oficial' : (factura.resultado_arca || 'Pendiente')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Desglose de Totales */}
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">

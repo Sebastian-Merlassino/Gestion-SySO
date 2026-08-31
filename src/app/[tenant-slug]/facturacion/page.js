@@ -1445,6 +1445,7 @@ export default function FacturacionPage({ params }) {
                             <option value="11">Factura C</option>
                             <option value="1">Factura A</option>
                             <option value="6">Factura B</option>
+                            <option value="99">Comprobante / Remito Interno (X)</option>
                             <option value="13">Nota de Crédito C</option>
                             <option value="3">Nota de Crédito A</option>
                             <option value="8">Nota de Crédito B</option>
@@ -1578,12 +1579,18 @@ export default function FacturacionPage({ params }) {
                                 {/* Comprobante */}
                                 <td className="px-5 py-3.5 font-semibold text-slate-900 font-mono">
                                   <div className="flex items-center gap-2">
-                                    <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-blue-50 text-[#468DFF] border border-blue-100 group-hover:bg-[#468DFF] group-hover:text-white transition-colors">
+                                    <span className={`px-2 py-0.5 rounded font-bold text-[10px] border transition-colors ${
+                                      f.tipo_comprobante === 99
+                                        ? 'bg-purple-50 text-purple-700 border-purple-200 group-hover:bg-purple-600 group-hover:text-white'
+                                        : 'bg-blue-50 text-[#468DFF] border-blue-100 group-hover:bg-[#468DFF] group-hover:text-white'
+                                    }`}>
                                       {letra}
                                     </span>
                                     <div>
                                       <span className="font-bold text-slate-900 block font-sans group-hover:text-[#468DFF] transition-colors">{desc}</span>
-                                      <span className="text-[11px] text-slate-500 font-mono">{ptoVta}-{compNro}</span>
+                                      <span className="text-[11px] text-slate-500 font-mono">
+                                        {f.tipo_comprobante === 99 ? `INT-${compNro}` : `${ptoVta}-${compNro}`}
+                                      </span>
                                     </div>
                                   </div>
                                 </td>
@@ -1618,11 +1625,19 @@ export default function FacturacionPage({ params }) {
                                 {/* CAE / Fiscal */}
                                 <td className="px-5 py-3.5">
                                   <div className="space-y-1">
-                                    {renderStatusBadge(f.estado)}
-                                    {f.cae && (
-                                      <span className="text-[10px] font-mono text-slate-500 block">
-                                        CAE: {f.cae}
+                                    {f.tipo_comprobante === 99 ? (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                        🔵 Comprobante Interno
                                       </span>
+                                    ) : (
+                                      <>
+                                        {renderStatusBadge(f.estado)}
+                                        {f.cae && (
+                                          <span className="text-[10px] font-mono text-slate-500 block">
+                                            CAE: {f.cae}
+                                          </span>
+                                        )}
+                                      </>
                                     )}
                                   </div>
                                 </td>

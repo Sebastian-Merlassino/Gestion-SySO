@@ -12,7 +12,7 @@ const emitirSchema = z.object({
   // Optional: if provided, we update an existing draft; otherwise we create a new one
   factura_id: z.string().uuid().optional(),
 
-  tipo_comprobante: z.number().int().refine(v => [1, 2, 3, 6, 7, 8, 11, 12, 13].includes(v), {
+  tipo_comprobante: z.number().int().refine(v => [1, 2, 3, 6, 7, 8, 11, 12, 13, 99].includes(v), {
     message: 'Tipo de comprobante inválido.',
   }),
   concepto: z.number().int().min(1).max(3).default(2),
@@ -112,6 +112,176 @@ export async function POST(request) {
     const input = parseResult.data;
     const { ip_address, user_agent } = extractRequestContext(request);
     const tenantId = profile.tenant_id;
+
+    // ── CASE: COMPROBANTE / REMITO INTERNO (X) - NO FISCAL ──
+    if (input.tipo_comprobante === 99) {
+      const today = new Date().toISOString().split('T')[0];
+      const ptoVta = 1;
+      let facturaId = input.factura_id;
+
+      if (input.solo_borrador) {
+        if (facturaId) {
+          const { error: updateError } = await serverClient.from('facturas').update({
+            tipo_comprobante: 99,
+            punto_venta: ptoVta,
+            fecha_emision: today,
+            concepto: input.concepto,
+            fecha_serv_desde: input.fecha_serv_desde || null,
+            fecha_serv_hasta: input.fecha_serv_hasta || null,
+            fecha_vto_pago: input.fecha_vto_pago || null,
+            receptor_doc_tipo: input.receptor_doc_tipo,
+            receptor_doc_nro: input.receptor_doc_nro,
+            receptor_razon_social: input.receptor_razon_social,
+            receptor_condicion_iva: input.receptor_condicion_iva,
+            receptor_domicilio: input.receptor_domicilio,
+            imp_neto: input.imp_neto,
+            imp_iva: input.imp_iva,
+            imp_total: input.imp_total,
+            imp_tot_conc: input.imp_tot_conc,
+            imp_op_ex: input.imp_op_ex,
+            imp_trib: input.imp_trib,
+            detalle_iva: input.detalle_iva,
+            descripcion: input.descripcion,
+            items: input.items,
+            empresa_id: input.empresa_id,
+            updated_at: new Date().toISOString(),
+          }).eq('id', facturaId).eq('tenant_id', tenantId);
+
+          if (updateError) {
+            return NextResponse.json({ error: `Error al actualizar borrador interno: ${updateError.message}` }, { status: 500 });
+          }
+        } else {
+          const { data: newFactura, error: insertError } = await serverClient.from('facturas').insert({
+            tenant_id: tenantId,
+            estado: 'borrador',
+            tipo_comprobante: 99,
+            punto_venta: ptoVta,
+            fecha_emision: today,
+            concepto: input.concepto,
+            fecha_serv_desde: input.fecha_serv_desde || null,
+            fecha_serv_hasta: input.fecha_serv_hasta || null,
+            fecha_vto_pago: input.fecha_vto_pago || null,
+            receptor_doc_tipo: input.receptor_doc_tipo,
+            receptor_doc_nro: input.receptor_doc_nro,
+            receptor_razon_social: input.receptor_razon_social,
+            receptor_condicion_iva: input.receptor_condicion_iva,
+            receptor_domicilio: input.receptor_domicilio,
+            imp_neto: input.imp_neto,
+            imp_iva: input.imp_iva,
+            imp_total: input.imp_total,
+            imp_tot_conc: input.imp_tot_conc,
+            imp_op_ex: input.imp_op_ex,
+            imp_trib: input.imp_trib,
+            detalle_iva: input.detalle_iva,
+            descripcion: input.descripcion,
+            items: input.items,
+            empresa_id: input.empresa_id,
+            created_by: user.id,
+          }).select('id').single();
+
+          if (insertError || !newFactura) {
+            return NextResponse.json({ error: `Error al guardar borrador interno: ${insertError?.message || 'unknown'}` }, { status: 500 });
+          }
+          facturaId = newFactura.id;
+        }
+
+        return NextResponse.json({
+          success: true,
+          factura_id: facturaId,
+          estado: 'borrador',
+          message: 'Borrador de comprobante interno guardado exitosamente.',
+        });
+      }
+
+      // If NOT solo_borrador -> Register it directly with internal number
+      const { data: lastInterno } = await serverClient
+        .from('facturas')
+        .select('numero_comprobante')
+        .eq('tenant_id', tenantId)
+        .eq('tipo_comprobante', 99)
+        .not('numero_comprobante', 'is', null)
+        .order('numero_comprobante', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const nextNro = (lastInterno?.numero_comprobante || 0) + 1;
+
+      const recordData = {
+        tenant_id: tenantId,
+        estado: 'autorizada',
+        tipo_comprobante: 99,
+        punto_venta: ptoVta,
+        numero_comprobante: nextNro,
+        fecha_emision: today,
+        concepto: input.concepto,
+        fecha_serv_desde: input.fecha_serv_desde || null,
+        fecha_serv_hasta: input.fecha_serv_hasta || null,
+        fecha_vto_pago: input.fecha_vto_pago || null,
+        receptor_doc_tipo: input.receptor_doc_tipo,
+        receptor_doc_nro: input.receptor_doc_nro,
+        receptor_razon_social: input.receptor_razon_social,
+        receptor_condicion_iva: input.receptor_condicion_iva,
+        receptor_domicilio: input.receptor_domicilio,
+        imp_neto: input.imp_neto,
+        imp_iva: input.imp_iva,
+        imp_total: input.imp_total,
+        imp_tot_conc: input.imp_tot_conc,
+        imp_op_ex: input.imp_op_ex,
+        imp_trib: input.imp_trib,
+        detalle_iva: input.detalle_iva,
+        descripcion: input.descripcion,
+        items: input.items,
+        empresa_id: input.empresa_id,
+        cae: null,
+        cae_vencimiento: null,
+        resultado_arca: 'A',
+        observaciones_arca: JSON.stringify({ tipo: 'comprobante_interno', estado_pago: 'pendiente' }),
+        updated_at: new Date().toISOString(),
+      };
+
+      if (facturaId) {
+        const { error: updateError } = await serverClient
+          .from('facturas')
+          .update(recordData)
+          .eq('id', facturaId)
+          .eq('tenant_id', tenantId);
+
+        if (updateError) {
+          return NextResponse.json({ error: `Error al registrar comprobante interno: ${updateError.message}` }, { status: 500 });
+        }
+      } else {
+        recordData.created_by = user.id;
+        const { data: newFactura, error: insertError } = await serverClient
+          .from('facturas')
+          .insert(recordData)
+          .select('id')
+          .single();
+
+        if (insertError || !newFactura) {
+          return NextResponse.json({ error: `Error al registrar comprobante interno: ${insertError?.message || 'unknown'}` }, { status: 500 });
+        }
+        facturaId = newFactura.id;
+      }
+
+      await registrarAuditoria(serverClient, {
+        tenant_id: tenantId,
+        factura_id: facturaId,
+        accion: 'comprobante_interno_registrado',
+        estado_nuevo: 'autorizada',
+        detalle: { tipo_comprobante: 99, numero_comprobante: nextNro, imp_total: input.imp_total },
+        ip_address,
+        user_agent,
+        performed_by: user.id,
+      });
+
+      return NextResponse.json({
+        success: true,
+        factura_id: facturaId,
+        estado: 'autorizada',
+        numero_comprobante: nextNro,
+        message: 'Comprobante interno registrado exitosamente para seguimiento.',
+      });
+    }
 
     // ── Get ARCA config ──
     const { data: arcaConfig, error: configError } = await serverClient

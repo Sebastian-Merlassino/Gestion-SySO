@@ -89,10 +89,11 @@ CREATE TABLE IF NOT EXISTS public.facturas (
   last_error_message TEXT,
 
   -- Voucher data
-  tipo_comprobante INTEGER NOT NULL CHECK (tipo_comprobante IN (1, 2, 3, 6, 7, 8, 11, 12, 13)),
+  tipo_comprobante INTEGER NOT NULL CHECK (tipo_comprobante IN (1, 2, 3, 6, 7, 8, 11, 12, 13, 99)),
   -- 1=Factura A, 6=Factura B, 11=Factura C
   -- 2=Nota Débito A, 7=Nota Débito B, 12=Nota Débito C
   -- 3=Nota Crédito A, 8=Nota Crédito B, 13=Nota Crédito C
+  -- 99=Comprobante / Remito Interno X (No Fiscal)
   punto_venta INTEGER NOT NULL,
   numero_comprobante BIGINT, -- NULL until ARCA confirms
   fecha_emision DATE NOT NULL,
