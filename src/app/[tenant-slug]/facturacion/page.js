@@ -357,11 +357,15 @@ export default function FacturacionPage({ params }) {
     }
   };
 
-  // Manejador: Emitir Factura Individual
+  // Manejador: Emitir Factura Individual / Registrar Comprobante Interno
   const handleEmitirFactura = async (payload) => {
     setIsSubmittingInvoice(true);
+    const isInterno = payload?.tipo_comprobante === 99;
     try {
-      globalToast.toast('Enviando solicitud a ARCA...', 'info');
+      globalToast.toast(
+        isInterno ? 'Registrando comprobante interno...' : 'Enviando solicitud a ARCA...',
+        'info'
+      );
       const res = await fetch('/api/facturacion/emitir', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -370,11 +374,21 @@ export default function FacturacionPage({ params }) {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        globalToast.toast(`¡Factura emitida exitosamente! CAE: ${data.cae}`, 'success');
+        if (isInterno) {
+          globalToast.toast(
+            `¡Comprobante interno INT-${String(data.numero_comprobante || 1).padStart(8, '0')} registrado con éxito!`,
+            'success'
+          );
+        } else {
+          globalToast.toast(`¡Factura emitida exitosamente! CAE: ${data.cae}`, 'success');
+        }
         loadFacturas();
         setCurrentView('table');
       } else {
-        globalToast.toast(data.error || 'Error al emitir factura.', 'error');
+        globalToast.toast(
+          data.error || (isInterno ? 'Error al registrar comprobante interno.' : 'Error al emitir factura.'),
+          'error'
+        );
         loadFacturas();
       }
     } catch (err) {
