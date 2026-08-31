@@ -16,8 +16,10 @@ import {
   AlertCircle,
   CreditCard,
   Building,
-  ArrowUpRight
+  ArrowUpRight,
+  FileSpreadsheet
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { getVoucherTypeDetails } from '../utils/facturaPdfGenerator';
 import AppButton from '@/components/ui/AppButton';
 import AppTooltip from '@/components/ui/AppTooltip';
@@ -234,6 +236,42 @@ export default function SeguimientoFacturacion({
       rankingJurisdicciones,
     };
   }, [validFacturas, selectedYear, currentMonth, currentYear]);
+
+  // Exportar Seguimiento a Excel
+  const handleExportExcel = () => {
+    if (!filteredFacturas || filteredFacturas.length === 0) return;
+    try {
+      const dataToExport = filteredFacturas.map(f => {
+        const { desc, letra } = getVoucherTypeDetails(f.tipo_comprobante);
+        const ptoVta = String(f.punto_venta || 1).padStart(5, '0');
+        const compNro = f.numero_comprobante ? String(f.numero_comprobante).padStart(8, '0') : '--------';
+        const pago = getPagoInfo(f);
+
+        return {
+          'Tipo Comprobante': `${desc} (${letra})`,
+          'Punto de Venta': ptoVta,
+          'N° Comprobante': compNro,
+          'Comprobante': `${letra} ${ptoVta}-${compNro}`,
+          'Fecha Emisión': f.fecha_emision ? formatDate(f.fecha_emision) : '',
+          'Cliente / Receptor': f.receptor_razon_social || 'Consumidor Final',
+          'CUIT / Documento': f.receptor_doc_nro || '-',
+          'Jurisdicción': pago.jurisdiccion || 'CABA',
+          'Monto Total ($)': Number(f.imp_total || 0),
+          'Estado de Cobro': pago.estado_pago === 'pagada' ? 'Pagada' : 'Pendiente',
+          'Fecha de Pago': pago.estado_pago === 'pagada' && pago.fecha_pago ? formatDate(pago.fecha_pago) : '',
+          'Método de Pago': pago.estado_pago === 'pagada' ? (pago.metodo_pago || 'Transferencia Bancaria') : '',
+          'CAE': f.cae || '-'
+        };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Seguimiento Cobranzas');
+      XLSX.writeFile(wb, `Seguimiento_Cobranzas_${selectedYear}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (err) {
+      console.error('Error al exportar cobranzas a Excel:', err);
+    }
+  };
 
   // Max value for monthly chart scaling
   const maxMonthlyVal = useMemo(() => {
@@ -525,8 +563,23 @@ export default function SeguimientoFacturacion({
             </p>
           </div>
 
-          <div className="text-xs text-slate-500 font-medium">
-            Mostrando <strong>{filteredFacturas.length}</strong> comprobantes
+          <div className="flex items-center gap-3">
+            <div className="text-xs text-slate-500 font-medium">
+              Mostrando <strong>{filteredFacturas.length}</strong> comprobantes
+            </div>
+
+            <AppButton
+              type="button"
+              variant="success"
+              size="sm"
+              onClick={handleExportExcel}
+              title="Descargar planilla de cobranzas en Excel"
+              className="shadow-xs shrink-0"
+              disabled={filteredFacturas.length === 0}
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              <span>Exportar Excel</span>
+            </AppButton>
           </div>
         </div>
 

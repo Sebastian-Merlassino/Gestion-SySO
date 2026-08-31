@@ -765,41 +765,80 @@ export default function FacturacionPage({ params }) {
   // Exportar Listado a Excel
   const handleExportExcel = () => {
     if (!sortedFacturas || sortedFacturas.length === 0) {
-      globalToast.toast('No hay facturas para exportar.', 'error');
+      globalToast.toast('No hay comprobantes para exportar.', 'error');
       return;
     }
 
     try {
-      globalToast.toast('Generando planilla Excel de facturas...', 'info');
+      globalToast.toast('Generando reporte Excel de comprobantes...', 'info');
       const dataToExport = sortedFacturas.map(f => {
         const { desc, letra } = getVoucherTypeDetails(f.tipo_comprobante);
         const ptoVta = String(f.punto_venta || 1).padStart(5, '0');
-        const compNro = f.numero_comprobante ? String(f.numero_comprobante).padStart(8, '0') : '-';
+        const compNro = f.numero_comprobante ? String(f.numero_comprobante).padStart(8, '0') : '--------';
+
+        let obs = {};
+        if (typeof f.observaciones_arca === 'object' && f.observaciones_arca !== null) {
+          obs = f.observaciones_arca;
+        } else if (typeof f.observaciones_arca === 'string') {
+          try { obs = JSON.parse(f.observaciones_arca); } catch (e) {}
+        }
+
+        // Extraer descripción de ítem o concepto
+        let itemDesc = f.descripcion;
+        if (!itemDesc && f.items) {
+          try {
+            const parsed = typeof f.items === 'string' ? JSON.parse(f.items) : f.items;
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              itemDesc = parsed.map(i => i.descripcion).filter(Boolean).join('; ');
+            }
+          } catch (e) {}
+        }
+        itemDesc = itemDesc || 'Servicios Profesionales';
+
+        const estadoPago = obs.estado_pago || 'pendiente';
+        const fechaPago = obs.fecha_pago ? formatDate(obs.fecha_pago) : '';
+        const metodoPago = estadoPago === 'pagada' ? (obs.metodo_pago || 'Transferencia Bancaria') : '';
+        const jurisdiccion = obs.jurisdiccion || 'CABA';
+
+        let estadoFiscalDesc = 'Borrador';
+        if (f.estado === 'autorizada') estadoFiscalDesc = 'Autorizada (CAE)';
+        else if (f.estado === 'error_conexion') estadoFiscalDesc = 'Error de Conexión';
+        else if (f.estado === 'rechazada') estadoFiscalDesc = 'Rechazada por ARCA';
 
         return {
           'Tipo Comprobante': `${desc} (${letra})`,
           'Punto de Venta': ptoVta,
           'N° Comprobante': compNro,
+          'Comprobante Completo': `${letra} ${ptoVta}-${compNro}`,
           'Fecha Emisión': f.fecha_emision ? formatDate(f.fecha_emision) : '',
           'Cliente / Razón Social': f.receptor_razon_social || 'Consumidor Final',
-          'CUIT / Documento': f.receptor_doc_nro || '',
-          'Condición IVA': f.receptor_condicion_iva || '',
+          'CUIT / Documento': f.receptor_doc_nro || '-',
+          'Condición IVA Receptor': f.receptor_condicion_iva || 'Consumidor Final',
+          'Descripción / Concepto': itemDesc,
+          'Período Desde': f.fecha_serv_desde ? formatDate(f.fecha_serv_desde) : '',
+          'Período Hasta': f.fecha_serv_hasta ? formatDate(f.fecha_serv_hasta) : '',
+          'Vto. para el Pago': f.fecha_vto_pago ? formatDate(f.fecha_vto_pago) : '',
+          'CAE': f.cae || '-',
+          'Vencimiento CAE': f.cae_vencimiento ? formatDate(f.cae_vencimiento) : '',
+          'Estado Fiscal': estadoFiscalDesc,
+          'Estado de Cobro': estadoPago === 'pagada' ? 'Pagada' : 'Pendiente',
+          'Fecha de Pago': fechaPago,
+          'Método de Pago': metodoPago,
+          'Jurisdicción': jurisdiccion,
           'Importe Neto ($)': Number(f.imp_neto || 0),
           'Importe IVA ($)': Number(f.imp_iva || 0),
           'Importe Total ($)': Number(f.imp_total || 0),
-          'Estado': f.estado,
-          'CAE': f.cae || '',
-          'Vencimiento CAE': f.cae_vencimiento ? formatDate(f.cae_vencimiento) : '',
         };
       });
 
       const ws = XLSX.utils.json_to_sheet(dataToExport);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Facturas');
-      XLSX.writeFile(wb, `Facturas_Emitidas_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, 'Comprobantes ARCA');
+      const fileName = `Facturacion_ARCA_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.writeFile(wb, fileName);
       globalToast.toast('Planilla Excel descargada con éxito.', 'success');
     } catch (err) {
-      console.error(err);
+      console.error('Error al exportar comprobantes a Excel:', err);
       globalToast.toast('Error al exportar a Excel.', 'error');
     }
   };
@@ -1312,6 +1351,19 @@ export default function FacturacionPage({ params }) {
                           className="w-full pl-9 pr-3.5 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400 font-semibold"
                         />
                       </div>
+
+                      {/* Botón Exportar Excel Estándar SySO */}
+                      <AppButton
+                        type="button"
+                        variant="success"
+                        size="sm"
+                        onClick={handleExportExcel}
+                        title="Descargar tabla completa de comprobantes en Excel"
+                        className="shadow-xs shrink-0"
+                      >
+                        <FileSpreadsheet className="h-4 w-4" />
+                        <span>Exportar Excel</span>
+                      </AppButton>
                     </div>
                   </div>
 
