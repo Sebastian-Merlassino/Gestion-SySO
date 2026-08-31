@@ -90,7 +90,7 @@ export default function NuevaFacturaForm({
   // Line items
   const [items, setItems] = useState([
     {
-      descripcion: 'Servicio externo de Salud y Seguridad Ocupacional',
+      descripcion: '',
       cantidad: 1,
       precio_unitario: 0,
       iva_porcentaje: config?.condicion_iva === 'monotributista' ? 0 : 21,
