@@ -350,11 +350,11 @@ export default function NuevaFacturaForm({
 
         {/* Banner Informativo para Comprobante Interno */}
         {tipoComprobante === 99 && (
-          <div className="mt-4 p-3.5 bg-purple-50 border border-purple-200/80 rounded-xl flex items-start gap-3 text-xs text-purple-900 animate-fade-in">
-            <span className="px-2 py-1 bg-purple-200 text-purple-800 rounded-lg font-extrabold text-xs shrink-0">X</span>
+          <div className="mt-4 p-3.5 bg-blue-50/70 border border-[#468DFF]/30 rounded-xl flex items-start gap-3 text-xs text-slate-800 animate-fade-in">
+            <span className="px-2 py-1 bg-[#468DFF] text-white rounded-lg font-extrabold text-xs shrink-0 shadow-xs">X</span>
             <div>
-              <p className="font-bold">Comprobante / Remito Interno (No Fiscal)</p>
-              <p className="text-purple-800 text-[11px] mt-0.5 leading-relaxed">
+              <p className="font-bold text-slate-900">Comprobante / Remito Interno (No Fiscal)</p>
+              <p className="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
                 Este registro se guardará para control administrativo y seguimiento de cobranzas. <strong>No se comunica con los servidores de ARCA ni genera CAE fiscal.</strong>
               </p>
             </div>
@@ -713,11 +713,7 @@ export default function NuevaFacturaForm({
           <button
             type="submit"
             disabled={isSubmitting || totals.impTotal <= 0}
-            className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-initial text-white ${
-              tipoComprobante === 99
-                ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/20'
-                : 'bg-[#468DFF] hover:bg-[#0511F2] shadow-[#468DFF]/20'
-            }`}
+            className="px-6 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white border border-[#468DFF] hover:border-[#0511F2] rounded-xl text-xs font-bold transition-all shadow-md shadow-[#468DFF]/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-initial"
           >
             {tipoComprobante === 99 ? (
               <>
@@ -743,7 +739,7 @@ export default function NuevaFacturaForm({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 sm:p-6 space-y-4 animate-scale-up">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-              <div className={`p-2 rounded-xl ${tipoComprobante === 99 ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-[#468DFF]'}`}>
+              <div className="p-2 rounded-xl bg-blue-50 text-[#468DFF]">
                 {tipoComprobante === 99 ? <CheckCircle2 className="h-5 w-5" /> : <Send className="h-5 w-5" />}
               </div>
               <div>
@@ -790,7 +786,7 @@ export default function NuevaFacturaForm({
               </div>
               <div className="pt-2 border-t border-slate-200 flex justify-between items-baseline">
                 <span className="font-bold text-slate-700">Importe Total:</span>
-                <span className={`text-base font-extrabold font-mono ${tipoComprobante === 99 ? 'text-purple-600' : 'text-[#468DFF]'}`}>
+                <span className="text-base font-extrabold font-mono text-[#468DFF]">
                   ${totals.impTotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
@@ -809,11 +805,7 @@ export default function NuevaFacturaForm({
                 type="button"
                 onClick={handleConfirmEmitir}
                 disabled={isSubmitting}
-                className={`px-5 py-2 text-xs font-bold text-white rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-1.5 ${
-                  tipoComprobante === 99
-                    ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/20'
-                    : 'bg-[#468DFF] hover:bg-[#0511F2] shadow-[#468DFF]/20'
-                }`}
+                className="px-5 py-2 text-xs font-bold text-white bg-[#468DFF] hover:bg-[#0511F2] border border-[#468DFF] hover:border-[#0511F2] rounded-xl shadow-md shadow-[#468DFF]/20 transition-all cursor-pointer flex items-center gap-1.5"
               >
                 {tipoComprobante === 99 ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Send className="h-3.5 w-3.5" />}
                 {tipoComprobante === 99 ? 'Confirmar y Registrar' : 'Confirmar y Emitir'}

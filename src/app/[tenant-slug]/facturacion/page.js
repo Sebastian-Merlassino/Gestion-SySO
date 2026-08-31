@@ -1579,11 +1579,7 @@ export default function FacturacionPage({ params }) {
                                 {/* Comprobante */}
                                 <td className="px-5 py-3.5 font-semibold text-slate-900 font-mono">
                                   <div className="flex items-center gap-2">
-                                    <span className={`px-2 py-0.5 rounded font-bold text-[10px] border transition-colors ${
-                                      f.tipo_comprobante === 99
-                                        ? 'bg-purple-50 text-purple-700 border-purple-200 group-hover:bg-purple-600 group-hover:text-white'
-                                        : 'bg-blue-50 text-[#468DFF] border-blue-100 group-hover:bg-[#468DFF] group-hover:text-white'
-                                    }`}>
+                                    <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-blue-50 text-[#468DFF] border border-blue-100 group-hover:bg-[#468DFF] group-hover:text-white transition-colors">
                                       {letra}
                                     </span>
                                     <div>
@@ -1626,7 +1622,7 @@ export default function FacturacionPage({ params }) {
                                 <td className="px-5 py-3.5">
                                   <div className="space-y-1">
                                     {f.tipo_comprobante === 99 ? (
-                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#468DFF] border border-blue-200">
                                         🔵 Comprobante Interno
                                       </span>
                                     ) : (
