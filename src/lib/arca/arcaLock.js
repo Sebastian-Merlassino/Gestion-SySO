@@ -1,7 +1,7 @@
 // src/lib/arca/arcaLock.js
 // Optimistic locking helper for preventing double invoice submission
 
-import { v4 as uuidv4 } from 'crypto';
+import crypto from 'crypto';
 
 /**
  * Lock TTL in minutes. If a lock is older than this, it's considered stale

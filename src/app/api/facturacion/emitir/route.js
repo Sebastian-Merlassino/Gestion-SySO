@@ -614,7 +614,7 @@ export async function POST(request) {
 
   } catch (err) {
     console.error('[API Facturación Emitir]', err);
-    return NextResponse.json({ error: `Error interno del servidor: ${err.message}` }, { status: 500 });
+    return NextResponse.json({ error: err.message || 'Error al procesar la emisión del comprobante.' }, { status: 400 });
   } finally {
     if (arcaCleanup) arcaCleanup();
   }
