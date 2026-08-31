@@ -332,9 +332,9 @@ export default function NuevaFacturaForm({
               onChange={(e) => setConcepto(parseInt(e.target.value))}
               className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#468DFF] transition-all"
             >
-              <option value={2}>Servicios (Higiene, Seguridad, Capacitación)</option>
-              <option value={1}>Productos / Bienes</option>
-              <option value={3}>Productos y Servicios (Ambos)</option>
+              <option value={2}>Servicios</option>
+              <option value={1}>Productos</option>
+              <option value={3}>Productos y Servicios</option>
             </select>
           </div>
 
