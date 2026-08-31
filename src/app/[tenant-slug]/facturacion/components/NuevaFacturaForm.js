@@ -535,7 +535,7 @@ export default function NuevaFacturaForm({
                     placeholder="Escribí o seleccioná un servicio..."
                     value={item.descripcion}
                     onChange={(e) => handleItemChange(idx, 'descripcion', e.target.value)}
-                    className="w-full pl-3 pr-8 py-2 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#468DFF] transition-all font-medium text-slate-800 placeholder-slate-400"
+                    className="w-full pl-3 pr-8 py-2 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#468DFF] transition-all font-medium text-slate-800 placeholder-slate-400 [&::-webkit-calendar-picker-indicator]:hidden"
                   />
                   
                   {/* Selector desplegable de acceso directo */}
