@@ -21,6 +21,44 @@ import {
 import { getVoucherTypeDetails } from '../utils/facturaPdfGenerator';
 import AppDatePicker from '@/components/ui/AppDatePicker';
 
+export const SERVICIOS_SYSO_PREDEFINIDOS = [
+  'Análisis de trabajo seguro (ATS)',
+  'Análisis fisicoquímico y bacteriológico de agua para el consumo humano',
+  'Asesoría ISO 14001 / ISO 45001',
+  'Capacitación',
+  'Carga de Sistema de Vigilancia y Control de Sustancias y Agentes (S.V.C.C.)',
+  'Elaboración de procedimientos de trabajo seguro',
+  'Estudio de carga de fuego',
+  'Estudio de carga térmica',
+  'Estudio de iluminación',
+  'Estudio de ruido',
+  'Estudio de ventilación',
+  'Estudio de vibraciones',
+  'Estudio ergonómico (Análisis Ergonómico por puesto de trabajo y confección de planillas 3 y 4 según Res. 886/2015)',
+  'Estudio ergonómico (Confección de planillas 1 y 2 según Res. 886/2015 y Análisis Ergonómico por puesto de trabajo + confección de planillas 3 y 4 según Res. 886/2015)',
+  'Estudio ergonómico (Confección de planillas 1 y 2 según Res. 886/2015)',
+  'Estudio ergonómico (Confección informe según Res. 295/03)',
+  'Gestión ante la A.R.T. (confección y carga de RGRL y RAR)',
+  'Informe antisiniestral',
+  'Informe de investigación de accidente (con análisis de causa raíz y definición de acciones correctivas)',
+  'Medición de puesta a tierra y continuidad de masas',
+  'Plano de evacuación',
+  'Procedimiento de acción ante emergencias',
+  'Procedimiento de trabajo seguro',
+  'Programa de ergonomía integrado',
+  'Programa de Seguridad (Res. 51/97; Res. 35/98; Res. 319/99)',
+  'Programa de Seguridad y Protocolo de Higiene y Salud en el Trabajo, Emergencia Sanitaria COVID19',
+  'Protocolo de Higiene y Salud en el Trabajo, Emergencia Sanitaria COVID19',
+  'Realizar / renovar aplicación de retardante de llamas - tratamiento ignífugo',
+  'Servicio externo de Salud y Seguridad Ocupacional',
+  'Simulacro de derrame',
+  'Simulacro de evacuación',
+  'Simulacro de incendio',
+  'Sistema de autoprotección',
+  'Toma de muestra para análisis fisicoquímico y bacteriológico de agua para el consumo humano',
+  'Visita de técnico a obra / establecimiento'
+];
+
 export default function NuevaFacturaForm({
   config,
   empresas = [],
@@ -52,7 +90,7 @@ export default function NuevaFacturaForm({
   // Line items
   const [items, setItems] = useState([
     {
-      descripcion: 'Servicios de Asesoramiento en Higiene y Seguridad Laboral',
+      descripcion: 'Servicio externo de Salud y Seguridad Ocupacional',
       cantidad: 1,
       precio_unitario: 0,
       iva_porcentaje: config?.condicion_iva === 'monotributista' ? 0 : 21,
@@ -489,14 +527,41 @@ export default function NuevaFacturaForm({
                 <label className="block text-[11px] font-bold text-slate-700 mb-1 lg:hidden">
                   Descripción del Servicio / Concepto *
                 </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: Servicio de Asesoramiento en Higiene y Seguridad Laboral"
-                  value={item.descripcion}
-                  onChange={(e) => handleItemChange(idx, 'descripcion', e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#468DFF]"
-                />
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    required
+                    list="servicios-syso-list"
+                    placeholder="Escribí o seleccioná un servicio..."
+                    value={item.descripcion}
+                    onChange={(e) => handleItemChange(idx, 'descripcion', e.target.value)}
+                    className="w-full pl-3 pr-8 py-2 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#468DFF] transition-all font-medium text-slate-800 placeholder-slate-400"
+                  />
+                  
+                  {/* Selector desplegable de acceso directo */}
+                  <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center">
+                    <div className="relative">
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            handleItemChange(idx, 'descripcion', e.target.value);
+                          }
+                        }}
+                        className="opacity-0 absolute inset-0 w-6 h-6 cursor-pointer z-10"
+                        title="Seleccionar de la lista de servicios sugeridos"
+                      >
+                        <option value="" disabled>Seleccionar servicio sugerido...</option>
+                        {SERVICIOS_SYSO_PREDEFINIDOS.map((s, sIdx) => (
+                          <option key={sIdx} value={s}>{s}</option>
+                        ))}
+                      </select>
+                      <div className="p-1 rounded text-slate-400 hover:text-[#468DFF] hover:bg-slate-100 transition-colors pointer-events-none">
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="col-span-4 lg:col-span-2">
@@ -573,6 +638,13 @@ export default function NuevaFacturaForm({
             </div>
           ))}
         </div>
+
+        {/* Datalist de servicios SySO para autocompletado nativo editable */}
+        <datalist id="servicios-syso-list">
+          {SERVICIOS_SYSO_PREDEFINIDOS.map((srv, sIdx) => (
+            <option key={sIdx} value={srv} />
+          ))}
+        </datalist>
 
         {/* Totals Summary */}
         <div className="mt-6 pt-5 border-t border-slate-100 flex flex-col sm:flex-row items-end sm:justify-end">

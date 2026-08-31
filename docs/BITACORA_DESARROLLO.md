@@ -1,14 +1,15 @@
-## [2026-08-31] Botón de Exportación a Excel en Facturación Electrónica ARCA
+## [2026-08-31] Lista Desplegable y Autocompletado Editable de Servicios SySO en Facturación
 
 ### Resumen de Cambios
-- **Integración de Exportación a Excel en Facturación:**
-  - Se incorporó el botón verde esmeralda `Exportar Excel` (`variant="success"`, icono `FileSpreadsheet`) en la barra superior de la sección de **Facturación Electrónica ARCA**, exactamente idéntico al estándar visual y funcional de *Constancia de Visita*.
-  - Se enriqueció el mapeo de datos exportados para incluir todas las columnas de la tabla: Tipo y Letra de Comprobante, Punto de Venta, N° de Comprobante, Fecha de Emisión, Razón Social del Cliente, CUIT/Documento, Condición de IVA, Descripción/Concepto, Período Facturado (Desde/Hasta), Vto. de Pago, CAE, Vto. CAE, Estado Fiscal, Estado de Cobro, Fecha de Pago, Método de Pago, Jurisdicción e importes (Neto, IVA y Total).
-  - Se añadió también el botón de exportación a Excel en la cabecera de la tabla del panel de **Seguimiento de Cobranzas**.
+- **Catálogo de Servicios Predefinidos en Emisión de Facturas:**
+  - Se incorporó un catálogo completo de 35 servicios técnicos estándar de Higiene y Seguridad Laboral en el formulario de emisión de facturas (`NuevaFacturaForm.js`).
+  - Se implementó un campo híbrido editable con autocompletado nativo (`<datalist>`) y selector directo desplegable (`<select>` con `<ChevronDown>`), permitiendo al usuario seleccionar cualquiera de los 35 servicios predefinidos con un solo clic o escribir y personalizar libremente el concepto facturado (agregando sucursales, fechas, detalles, o creando servicios 100% a medida).
+- **Exportación a Excel en Facturación:**
+  - Se integró el botón verde esmeralda `Exportar Excel` (`variant="success"`, icono `FileSpreadsheet`) en la barra superior de la sección de **Facturación Electrónica ARCA** y en el panel de **Seguimiento de Cobranzas**.
 
 ### Decisiones Clave
-- Mantener consistencia visual exacta con *Constancias de Visita* utilizando `<AppButton variant="success" size="sm">` y `FileSpreadsheet`.
-- Generación de planillas `.xlsx` completas en el cliente con la librería `xlsx`.
+- Combinar `<input>` libre con `<datalist>` y selector desplegable para ofrecer máxima agilidad: selección instantánea sin perder la capacidad de edición manual.
+- Corrección de tipografías y términos técnicos en el listado oficial de servicios SySO.
 
 ### Skills Utilizadas
 - `gestion-syso-bitacora`
@@ -16,6 +17,7 @@
 - `next-best-practices`
 
 ### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/facturacion/components/NuevaFacturaForm.js`
 - `[MODIFY] src/app/[tenant-slug]/facturacion/page.js`
 - `[MODIFY] src/app/[tenant-slug]/facturacion/components/SeguimientoFacturacion.js`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`
