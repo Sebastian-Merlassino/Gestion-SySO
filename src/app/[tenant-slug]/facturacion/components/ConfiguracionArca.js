@@ -205,7 +205,7 @@ export default function ConfiguracionArca({
               type="text"
               name="razon_social"
               required
-              placeholder="Ej: Merlassino Sebastian Alejandro"
+              placeholder="Ej: Consultora SySO S.A. o Pérez Juan Carlos"
               value={formData.razon_social}
               onChange={handleChange}
               className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#468DFF] transition-all"

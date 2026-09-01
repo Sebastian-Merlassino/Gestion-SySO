@@ -109,7 +109,7 @@ export default function ProgramaGestion({ params }) {
   // Sesión y Datos Contexto
   const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
-  const [adminContact, setAdminContact] = useState({ email: 'info@gestionsyso.com', phone: '1159969956 / 1132296691' });
+  const [adminContact, setAdminContact] = useState({ email: 'contacto@gestionsyso.com', phone: '' });
 
   // Estados y Refs para Carga de Archivos
   const [selectedFileName, setSelectedFileName] = useState('');
@@ -426,8 +426,8 @@ export default function ProgramaGestion({ params }) {
 
       if (adminProf) {
         setAdminContact({
-          email: adminProf.email || 'info@gestionsyso.com',
-          phone: adminProf.phone || '1159969956 / 1132296691'
+          email: adminProf.email || 'contacto@gestionsyso.com',
+          phone: adminProf.phone || ''
         });
       }
 

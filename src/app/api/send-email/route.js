@@ -194,6 +194,7 @@ export async function POST(request) {
         );
       }
 
+      const isFactura = documentType === 'factura' || (typeof documentType === 'string' && documentType.toLowerCase().includes('factura'));
       const isAvisoRiesgo = documentType === 'aviso_riesgo';
       const isControlElectrico = documentType === 'control_electrico';
       const isChecklistPersonalizado = documentType === 'checklist_personalizado';
@@ -204,7 +205,9 @@ export async function POST(request) {
       const isCapacitacionOnline = documentType === 'capacitacion_online';
 
       attachments.push({
-        filename: isAvisoRiesgo
+        filename: isFactura
+          ? `Factura_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${(date || 'comprobante').replace(/[\/\\]/g, '-')}.pdf`
+          : isAvisoRiesgo
           ? `Aviso_Riesgo_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'aviso'}.pdf`
           : isControlElectrico
           ? `Inspección_Visual_Instalaciones_Eléctricas_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'control'}.pdf`
@@ -232,6 +235,7 @@ export async function POST(request) {
     const pass = process.env.SMTP_PASS;
     const from = process.env.SMTP_FROM || 'no-reply@gestionsyso.com';
 
+    const isFactura = documentType === 'factura' || (typeof documentType === 'string' && documentType.toLowerCase().includes('factura'));
     const isAvisoRiesgo = documentType === 'aviso_riesgo';
     const isControlElectrico = documentType === 'control_electrico';
     const isChecklistPersonalizado = documentType === 'checklist_personalizado';
@@ -243,6 +247,8 @@ export async function POST(request) {
 
     const mailSubject = customSubject
       ? customSubject
+      : isFactura
+      ? `${documentType || 'Factura Electrónica'} - ${companyName || 'Cliente'}`
       : isAvisoRiesgo
       ? `Aviso de Riesgo de Higiene y Seguridad - ${companyName || 'Cliente'}`
       : isControlElectrico
@@ -379,7 +385,7 @@ export async function POST(request) {
                 <tr>
                   <td style="padding: 32px 32px 0 32px; text-align: center;">
                     <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">
-                      ${isCapacitacionOnline ? (filePath ? 'Registro de Capacitación Virtual' : 'Capacitación Virtual de Higiene y Seguridad') : isAvisoRiesgo ? 'Aviso de Riesgo' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : isProtocoloIluminacion ? 'Protocolo de Medición de Iluminación' : isProtocoloRuido ? 'Protocolo de Medición de Ruido' : isProtocoloErgonomia ? 'Protocolo de Ergonomía' : isProtocoloPuestaATierra ? 'Protocolo de Medición de Puesta a Tierra' : 'Constancia de Visita Técnica'}
+                      ${isFactura ? (escapeHtml(documentType) || 'Factura Electrónica') : isCapacitacionOnline ? (filePath ? 'Registro de Capacitación Virtual' : 'Capacitación Virtual de Higiene y Seguridad') : isAvisoRiesgo ? 'Aviso de Riesgo' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : isProtocoloIluminacion ? 'Protocolo de Medición de Iluminación' : isProtocoloRuido ? 'Protocolo de Medición de Ruido' : isProtocoloErgonomia ? 'Protocolo de Ergonomía' : isProtocoloPuestaATierra ? 'Protocolo de Medición de Puesta a Tierra' : 'Constancia de Visita Técnica'}
                     </h1>
                     <p style="margin: 6px 0 0 0; font-size: 13px; font-weight: 600; color: ${effectiveTenantColor}; text-transform: uppercase; letter-spacing: 0.06em;">
                       ${companyNameEscaped ? companyNameEscaped : 'Notificación Oficial de Servicio'}
@@ -392,16 +398,26 @@ export async function POST(request) {
                 <tr>
                   <td style="padding: 24px 32px;">
                     <div style="background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #D9D9D9; font-size: 15px; line-height: 1.7; color: #334155;">
+                      <p style="margin-top: 0; margin-bottom: 8px; font-size: 15px; line-height: 1.7; color: #334155; font-weight: 600;">
+                        Estimado cliente,
+                      </p>
+                      <p style="margin-top: 0; margin-bottom: ${formattedCustomMessage ? '16px' : '0'}; font-size: 15px; line-height: 1.7; color: #334155;">
+                        ${isFactura 
+                          ? 'Se adjunta el comprobante / factura correspondiente a los servicios brindados.' 
+                          : isCapacitacionOnline
+                          ? 'Se adjunta el registro de capacitación virtual correspondiente.'
+                          : 'Se adjunta la documentación técnica correspondiente a sus instalaciones.'}
+                      </p>
                       ${formattedCustomMessage ? `
-                        <div>${formattedCustomMessage}</div>
-                      ` : `
-                        <p style="margin-top: 0; font-size: 15px; line-height: 1.7; color: #334155;">
-                          Estimado cliente,
-                        </p>
-                        <p style="margin-bottom: 0; font-size: 15px; line-height: 1.7; color: #334155;">
-                          Se adjunta la documentación técnica correspondiente a sus instalaciones.
-                        </p>
-                      `}
+                        <div style="padding-top: 14px; border-top: 1px dashed #cbd5e1;">
+                          <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
+                            💬 Mensaje adicional:
+                          </p>
+                          <div style="font-size: 14px; line-height: 1.6; color: #1e293b; background-color: #f8fafc; padding: 12px 16px; border-radius: 8px; border-left: 3px solid ${effectiveTenantColor};">
+                            ${formattedCustomMessage}
+                          </div>
+                        </div>
+                      ` : ''}
                     </div>
                   </td>
                 </tr>
@@ -419,7 +435,7 @@ export async function POST(request) {
                             Este es un envío automático generado desde la plataforma <strong>Gestión SySO</strong> en nombre de <strong>${tenantNameEscaped}</strong>${inspectorNameEscaped ? ` (${inspectorNameEscaped})` : ''}.
                           </p>
                           <p style="margin: 8px 0 0 0; font-size: 13px; line-height: 1.5; color: #475569;">
-                            Por favor, para responder o realizar consultas sobre este informe, diríjase a: 
+                            Por favor, para responder o realizar consultas sobre este ${isFactura ? 'comprobante' : 'informe'}, diríjase a: 
                             <a href="mailto:${effectiveReplyToEmailEscaped}" style="color: ${effectiveTenantColor}; font-weight: 600; text-decoration: underline;">${effectiveReplyToEmailEscaped}</a> 
                             <span style="font-size: 12px; color: #64748b;">(también puede presionar directamente <strong>"Responder"</strong> en su cliente de correo).</span>
                           </p>
@@ -440,7 +456,9 @@ export async function POST(request) {
                               📄 Archivo Adjunto Incluido
                             </p>
                             <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #475569;">
-                              El informe oficial en formato PDF ha sido adjuntado a este correo electrónico para su descarga y archivado.
+                              ${isFactura 
+                                ? 'El comprobante / factura oficial en formato PDF ha sido adjuntado a este correo electrónico para su descarga y archivado.' 
+                                : 'El informe oficial en formato PDF ha sido adjuntado a este correo electrónico para su descarga y archivado.'}
                             </p>
                           </td>
                         </tr>

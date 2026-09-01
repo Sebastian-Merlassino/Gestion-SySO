@@ -272,7 +272,7 @@ export default function FacturacionPage({ params }) {
       try {
         const { data, error } = await supabase
           .from('empresas')
-          .select('id, razon_social, cuit')
+          .select('id, razon_social, cuit, contactos_correos, contactos_telefonos, contactos_facturacion')
           .eq('tenant_id', profile.tenant_id)
           .order('razon_social', { ascending: true });
         if (!error && data) setEmpresas(data);
@@ -544,18 +544,61 @@ export default function FacturacionPage({ params }) {
     // Buscar datos de contacto del cliente en la lista de empresas registradas
     const foundEmpresa = empresas.find(e => 
       e.id === factura.empresa_id || 
-      (factura.receptor_doc_nro && e.cuit && String(e.cuit).replace(/[^0-9]/g, '') === String(factura.receptor_doc_nro).replace(/[^0-9]/g, ''))
+      (factura.receptor_doc_nro && e.cuit && String(e.cuit).replace(/[^0-9]/g, '') === String(factura.receptor_doc_nro).replace(/[^0-9]/g, '')) ||
+      (factura.receptor_razon_social && e.razon_social && e.razon_social.trim().toLowerCase() === factura.receptor_razon_social.trim().toLowerCase())
     );
 
     const emails = [];
     const phones = [];
 
     if (foundEmpresa) {
-      if (foundEmpresa.email) {
-        emails.push({ etiqueta: `Empresa (${foundEmpresa.razon_social})`, valor: foundEmpresa.email, checked: true });
+      // 1. Correos de Facturación (prioridad para facturas)
+      if (Array.isArray(foundEmpresa.contactos_facturacion)) {
+        foundEmpresa.contactos_facturacion.forEach((c) => {
+          const mailStr = (typeof c === 'object') ? (c.valor || c.correo || c.email || '') : String(c || '');
+          const nameStr = (typeof c === 'object' && c.nombre) ? c.nombre : 'Facturación';
+          const cargoStr = (typeof c === 'object' && c.cargo) ? c.cargo : '';
+          if (mailStr && mailStr.includes('@')) {
+            emails.push({
+              valor: mailStr.trim(),
+              descripcion: `[Facturación] ${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr.trim()})`,
+              checked: emails.length === 0
+            });
+          }
+        });
       }
-      if (foundEmpresa.telefono) {
-        phones.push({ etiqueta: `Empresa (${foundEmpresa.razon_social})`, valor: foundEmpresa.telefono, checked: true });
+
+      // 2. Correos Generales
+      if (Array.isArray(foundEmpresa.contactos_correos)) {
+        foundEmpresa.contactos_correos.forEach((c) => {
+          const mailStr = (typeof c === 'object') ? (c.valor || c.correo || c.email || '') : String(c || '');
+          const nameStr = (typeof c === 'object' && c.nombre) ? c.nombre : 'Contacto';
+          const cargoStr = (typeof c === 'object' && c.cargo) ? c.cargo : '';
+          if (mailStr && mailStr.includes('@') && !emails.some(e => e.valor.toLowerCase() === mailStr.trim().toLowerCase())) {
+            emails.push({
+              valor: mailStr.trim(),
+              descripcion: `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr.trim()})`,
+              checked: emails.length === 0
+            });
+          }
+        });
+      }
+
+      // 3. Teléfonos (WhatsApp)
+      if (Array.isArray(foundEmpresa.contactos_telefonos)) {
+        foundEmpresa.contactos_telefonos.forEach((t) => {
+          const phoneStr = (typeof t === 'object') ? (t.valor || t.telefono || t.phone || '') : String(t || '');
+          const nameStr = (typeof t === 'object' && t.nombre) ? t.nombre : 'Contacto';
+          const cargoStr = (typeof t === 'object' && t.cargo) ? t.cargo : '';
+          const cleanPhone = phoneStr.replace(/[^0-9]/g, '');
+          if (cleanPhone && !phones.some(p => p.valor.replace(/[^0-9]/g, '') === cleanPhone)) {
+            phones.push({
+              valor: phoneStr.trim(),
+              descripcion: `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${phoneStr.trim()})`,
+              checked: phones.length === 0
+            });
+          }
+        });
       }
     }
 
@@ -565,7 +608,7 @@ export default function FacturacionPage({ params }) {
   };
 
   // Manejador: Despachar por Email
-  const handleSendEmail = async () => {
+  const handleSendEmail = async (customMsg) => {
     if (!sendTargetFactura) return;
     const checked = availableEmails.filter(e => e.checked).map(e => e.valor);
     const manuals = manualEmail.split(',').map(e => e.trim()).filter(Boolean);
@@ -625,6 +668,7 @@ export default function FacturacionPage({ params }) {
         body: JSON.stringify({
           emails: recipients,
           filePath,
+          customMessage: typeof customMsg === 'string' ? customMsg : undefined,
           companyName: sendTargetFactura.receptor_razon_social || 'Consumidor Final',
           date: formatDate(sendTargetFactura.fecha_emision),
           inspectorName: config?.razon_social || profile?.full_name || 'Gestión SySO',
@@ -649,7 +693,7 @@ export default function FacturacionPage({ params }) {
   };
 
   // Manejador: Despachar por WhatsApp
-  const handleSendWhatsApp = async () => {
+  const handleSendWhatsApp = async (customMsg) => {
     if (!sendTargetFactura) return;
     const checked = availablePhones.filter(p => p.checked).map(p => p.valor);
     const manuals = manualPhone.split(',').map(p => p.trim()).filter(Boolean);
@@ -695,7 +739,8 @@ export default function FacturacionPage({ params }) {
       const ptoVta = String(sendTargetFactura.punto_venta || config?.punto_venta || 1).padStart(5, '0');
       const compNro = sendTargetFactura.numero_comprobante ? String(sendTargetFactura.numero_comprobante).padStart(8, '0') : '-';
 
-      const message = `Hola, adjuntamos la Factura Electrónica ${desc} (${letra}) N° ${ptoVta}-${compNro} emitida por ${config?.razon_social || tenant?.name || 'Gestión SySO'}. Podés visualizar y descargar tu comprobante en el siguiente enlace: ${downloadUrl}`;
+      const customNote = typeof customMsg === 'string' && customMsg.trim() ? `\n\n*Nota / Mensaje:* ${customMsg.trim()}` : '';
+      const message = `Hola, adjuntamos la Factura Electrónica ${desc} (${letra}) N° ${ptoVta}-${compNro} emitida por ${config?.razon_social || tenant?.name || 'Gestión SySO'}.${customNote}\n\nPodés visualizar y descargar tu comprobante en el siguiente enlace:\n${downloadUrl}`;
 
       const cleanPhone = targetPhones[0].replace(/[^0-9]/g, '');
       const waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
@@ -1831,6 +1876,7 @@ export default function FacturacionPage({ params }) {
         onClose={() => setIsSendModalOpen(false)}
         title="Enviar Factura Electrónica (PDF)"
         subtitle={sendTargetFactura ? `${getVoucherTypeDetails(sendTargetFactura.tipo_comprobante).desc} — ${sendTargetFactura.receptor_razon_social || 'Cliente'}` : undefined}
+        aiContext="Envío de Factura Electrónica ARCA y Comprobante Fiscal"
         availableEmails={availableEmails}
         setAvailableEmails={setAvailableEmails}
         manualEmail={manualEmail}

@@ -5,9 +5,11 @@ import React, { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Send, Mail, MessageCircle, X, Loader2 } from 'lucide-react';
 import AppButton from './AppButton';
+import AITextHelper from '@/components/ui/AITextHelper';
 
 /**
  * AppSendModal - Diálogo estándar unificado para despacho de reportes por Email y WhatsApp
+ * con soporte integrado de SySO-AI-Voice-Helper (dictado por voz y refinamiento por IA).
  * 
  * Cumple con el estándar de diseño de Gestión SySO (Radix UI, Backdrop blur, Tailwind y accesibilidad).
  */
@@ -20,6 +22,14 @@ export default function AppSendModal({
   subtitle,
   activeTab: controlledActiveTab,
   onTabChange,
+  
+  // Custom message & AI props
+  customMessage: controlledCustomMessage,
+  setCustomMessage,
+  onCustomMessageChange,
+  aiContext = 'Envío de documentación técnica e informe de Higiene y Seguridad Laboral',
+  messageLabel = 'Mensaje Adicional:',
+  messagePlaceholder = 'Escriba un mensaje personalizado o dicte con la voz...',
   
   // Email props
   availableEmails = [],
@@ -49,10 +59,24 @@ export default function AppSendModal({
 }) {
   const isActuallyOpen = open !== undefined ? open : (isOpen || false);
   const [internalTab, setInternalTab] = useState('email');
+  const [internalCustomMessage, setInternalCustomMessage] = useState('');
   
   const currentTab = controlledActiveTab !== undefined ? controlledActiveTab : internalTab;
   const effectiveEmailLoading = mailLoading !== undefined ? mailLoading : isEmailLoading;
   const effectiveWhatsappLoading = whatsappLoading !== undefined ? whatsappLoading : isWhatsappLoading;
+  const effectiveCustomMessage = controlledCustomMessage !== undefined ? controlledCustomMessage : internalCustomMessage;
+
+  const handleMessageChange = (val) => {
+    if (onCustomMessageChange) {
+      onCustomMessageChange(val);
+    }
+    if (setCustomMessage) {
+      setCustomMessage(val);
+    }
+    if (controlledCustomMessage === undefined) {
+      setInternalCustomMessage(val);
+    }
+  };
 
   const handleTabSelect = (tab) => {
     if (onTabChange) {
@@ -115,6 +139,18 @@ export default function AppSendModal({
     }
   };
 
+  const handleSendEmailClick = () => {
+    if (onSendEmail) {
+      onSendEmail(effectiveCustomMessage);
+    }
+  };
+
+  const handleSendWhatsAppClick = () => {
+    if (onSendWhatsApp) {
+      onSendWhatsApp(effectiveCustomMessage);
+    }
+  };
+
   return (
     <Dialog.Root open={isActuallyOpen} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
@@ -138,7 +174,7 @@ export default function AppSendModal({
                 handleClose();
               }
             }}
-            className="relative w-full max-w-md p-5 sm:p-6 bg-white border border-slate-200 rounded-t-2xl sm:rounded-2xl shadow-2xl animate-scale-up focus:outline-none space-y-4 max-h-[90vh] overflow-y-auto sm:max-h-none"
+            className="relative w-full max-w-lg p-5 sm:p-6 bg-white border border-slate-200 rounded-t-2xl sm:rounded-2xl shadow-2xl animate-scale-up focus:outline-none space-y-4 max-h-[90vh] overflow-y-auto sm:max-h-none"
           >
             {/* Cabecera del Modal */}
             <div className="flex items-center justify-between pb-1 border-b border-slate-100">
@@ -151,7 +187,7 @@ export default function AppSendModal({
                     {title}
                   </Dialog.Title>
                   {subtitle && (
-                    <Dialog.Description className="text-[11px] text-slate-500 font-medium truncate max-w-[260px]">
+                    <Dialog.Description className="text-[11px] text-slate-500 font-medium truncate max-w-[280px]">
                       {subtitle}
                     </Dialog.Description>
                   )}
@@ -221,7 +257,7 @@ export default function AppSendModal({
                         </p>
                       </div>
                     ) : (
-                      <div className="bg-slate-50 p-2.5 border border-slate-200 rounded-xl max-h-36 overflow-y-auto space-y-1 scrollbar-thin">
+                      <div className="bg-slate-50 p-2.5 border border-slate-200 rounded-xl max-h-32 overflow-y-auto space-y-1 scrollbar-thin">
                         {availableEmails.map((e, idx) => (
                           <label
                             key={idx}
@@ -254,6 +290,30 @@ export default function AppSendModal({
                       className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] bg-slate-50/50 font-medium resize-none transition-all placeholder:text-slate-400"
                     />
                   </div>
+
+                  {/* Campo de Mensaje Adicional con SySO-AI-Voice-Helper */}
+                  <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-100">
+                    <div className="flex items-center justify-between gap-2 min-h-[28px]">
+                      <label className="text-xs font-bold text-slate-700">
+                        {messageLabel}
+                      </label>
+                      <AITextHelper
+                        value={effectiveCustomMessage}
+                        onChange={handleMessageChange}
+                        context={aiContext}
+                        disabled={effectiveEmailLoading}
+                        allowExpand={true}
+                      />
+                    </div>
+                    <textarea
+                      rows={2}
+                      placeholder={messagePlaceholder}
+                      value={effectiveCustomMessage}
+                      onChange={(e) => handleMessageChange(e.target.value)}
+                      disabled={effectiveEmailLoading}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] bg-slate-50/50 font-medium resize-none transition-all placeholder:text-slate-400"
+                    />
+                  </div>
                 </div>
 
                 {/* Acciones de la Pestaña Correo */}
@@ -275,7 +335,7 @@ export default function AppSendModal({
                     variant="primary"
                     size="md"
                     disabled={effectiveEmailLoading}
-                    onClick={onSendEmail}
+                    onClick={handleSendEmailClick}
                     className="flex items-center gap-1.5 shadow-md shadow-[#468DFF]/15 min-w-[130px] justify-center"
                   >
                     {effectiveEmailLoading ? (
@@ -312,7 +372,7 @@ export default function AppSendModal({
                         </p>
                       </div>
                     ) : (
-                      <div className="bg-slate-50 p-2.5 border border-slate-200 rounded-xl max-h-36 overflow-y-auto space-y-1 scrollbar-thin">
+                      <div className="bg-slate-50 p-2.5 border border-slate-200 rounded-xl max-h-32 overflow-y-auto space-y-1 scrollbar-thin">
                         {availablePhones.map((p, idx) => (
                           <label
                             key={idx}
@@ -334,7 +394,7 @@ export default function AppSendModal({
                   {/* Campo de Teléfono Manual */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-bold text-slate-700">
-                      Número Manual (ej: 5491159969956):
+                      Número Manual (ej: 5491123456789):
                     </label>
                     <input
                       type="text"
@@ -343,6 +403,30 @@ export default function AppSendModal({
                       onChange={handleManualPhoneInput}
                       disabled={effectiveWhatsappLoading}
                       className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 bg-slate-50/50 font-medium transition-all placeholder:text-slate-400"
+                    />
+                  </div>
+
+                  {/* Campo de Mensaje Adicional con SySO-AI-Voice-Helper */}
+                  <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-100">
+                    <div className="flex items-center justify-between gap-2 min-h-[28px]">
+                      <label className="text-xs font-bold text-slate-700">
+                        {messageLabel}
+                      </label>
+                      <AITextHelper
+                        value={effectiveCustomMessage}
+                        onChange={handleMessageChange}
+                        context={aiContext}
+                        disabled={effectiveWhatsappLoading}
+                        allowExpand={true}
+                      />
+                    </div>
+                    <textarea
+                      rows={2}
+                      placeholder={messagePlaceholder}
+                      value={effectiveCustomMessage}
+                      onChange={(e) => handleMessageChange(e.target.value)}
+                      disabled={effectiveWhatsappLoading}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 bg-slate-50/50 font-medium resize-none transition-all placeholder:text-slate-400"
                     />
                   </div>
                 </div>
@@ -364,7 +448,7 @@ export default function AppSendModal({
                   <button
                     type="button"
                     disabled={effectiveWhatsappLoading}
-                    onClick={onSendWhatsApp}
+                    onClick={handleSendWhatsAppClick}
                     className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-green-600/15 disabled:bg-slate-400 disabled:cursor-not-allowed min-w-[150px] justify-center"
                   >
                     {effectiveWhatsappLoading ? (
@@ -388,3 +472,4 @@ export default function AppSendModal({
     </Dialog.Root>
   );
 }
+

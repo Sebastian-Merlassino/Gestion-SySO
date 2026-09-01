@@ -145,7 +145,7 @@ export default function MatrizRiesgosPage({ params }) {
   // Estados estructurales
   const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
-  const [adminContact, setAdminContact] = useState({ email: 'info@gestionsyso.com', phone: '1159969956 / 1132296691' });
+  const [adminContact, setAdminContact] = useState({ email: 'contacto@gestionsyso.com', phone: '' });
   const [empresas, setEmpresas] = useState([]);
   const [allEstablecimientos, setAllEstablecimientos] = useState([]);
   const [miembrosList, setMiembrosList] = useState([]);
@@ -439,8 +439,8 @@ export default function MatrizRiesgosPage({ params }) {
 
       if (adminProf) {
         setAdminContact({
-          email: adminProf.email || 'info@gestionsyso.com',
-          phone: adminProf.phone || '1159969956 / 1132296691'
+          email: adminProf.email || 'contacto@gestionsyso.com',
+          phone: adminProf.phone || ''
         });
       }
 
@@ -595,7 +595,7 @@ export default function MatrizRiesgosPage({ params }) {
     setMiembrosList([
       { id: 'mock-miembro-1', full_name: 'Gonzalo Merlo' },
       { id: 'mock-miembro-2', full_name: 'Florencia Benitez' },
-      { id: 'mock-miembro-3', full_name: 'Sebastián Merlassino' },
+      { id: 'mock-miembro-3', full_name: 'Mariano Fernández' },
       { id: 'mock-miembro-4', full_name: 'Alejandro Rodriguez' },
       { id: 'mock-miembro-5', full_name: 'Martina Rossi' }
     ]);

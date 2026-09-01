@@ -706,20 +706,39 @@ export default function CapacitacionesOnlinePage({ params }) {
     const emp = empresas.find(e => e.id === item.empresa_id);
 
     // Correos de la Razón Social
-    const emails = emp?.contactos_correos || [];
-    const initialAvailableEmails = emails.map(c => ({
-      descripcion: `${c.contacto || 'Contacto'}: ${c.valor}`,
-      valor: c.valor,
-      checked: false
-    }));
+    const emails = [];
+    if (emp && Array.isArray(emp.contactos_correos)) {
+      emp.contactos_correos.forEach((c) => {
+        const mailStr = (typeof c === 'object') ? (c.valor || c.correo || c.email || '') : String(c || '');
+        const nameStr = (typeof c === 'object' && c.nombre) ? c.nombre : 'Contacto';
+        const cargoStr = (typeof c === 'object' && c.cargo) ? c.cargo : '';
+        if (mailStr && mailStr.includes('@')) {
+          emails.push({
+            valor: mailStr.trim(),
+            descripcion: `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr.trim()})`,
+            checked: emails.length === 0
+          });
+        }
+      });
+    }
 
     // Teléfonos de la Razón Social
-    const phones = emp?.contactos_telefonos || [];
-    const initialAvailablePhones = phones.map(c => ({
-      descripcion: `${c.contacto || 'Contacto'}: ${c.valor}`,
-      valor: c.valor,
-      checked: false
-    }));
+    const phones = [];
+    if (emp && Array.isArray(emp.contactos_telefonos)) {
+      emp.contactos_telefonos.forEach((t) => {
+        const phoneStr = (typeof t === 'object') ? (t.valor || t.telefono || t.phone || '') : String(t || '');
+        const nameStr = (typeof t === 'object' && t.nombre) ? t.nombre : 'Contacto';
+        const cargoStr = (typeof t === 'object' && t.cargo) ? t.cargo : '';
+        const cleanPhone = phoneStr.replace(/[^0-9]/g, '');
+        if (cleanPhone) {
+          phones.push({
+            valor: phoneStr.trim(),
+            descripcion: `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${phoneStr.trim()})`,
+            checked: phones.length === 0
+          });
+        }
+      });
+    }
 
     const temasText = item.titulo || 'Higiene y Seguridad';
 
@@ -728,9 +747,9 @@ export default function CapacitacionesOnlinePage({ params }) {
       capacitacion: item,
       publicUrl,
       activeTab: 'email',
-      availableEmails: initialAvailableEmails,
+      availableEmails: emails,
       manualEmail: '',
-      availablePhones: initialAvailablePhones,
+      availablePhones: phones,
       manualPhone: '',
       subject: 'Capacitación virtual de higiene y seguridad en el trabajo',
       message: `Por medio del presente, les compartimos el enlace para ingresar a la capacitación virtual de higiene y seguridad en el trabajo. Temas: "${temasText}".\n\nPor favor ingrese al siguiente enlace para revisar el material y registrar su de asistencia:\n${publicUrl}\n\nGestión SySO`,
@@ -957,21 +976,42 @@ export default function CapacitacionesOnlinePage({ params }) {
     const emp = empresas.find(e => e.id === item.empresa_id);
 
     // Correos de la empresa
-    const emails = emp?.contactos_correos || [];
-    setAvailableEmails(emails.map(c => ({
-      descripcion: `${c.contacto || 'Contacto'}: ${c.valor}`,
-      valor: c.valor,
-      checked: false
-    })));
+    const emails = [];
+    if (emp && Array.isArray(emp.contactos_correos)) {
+      emp.contactos_correos.forEach((c) => {
+        const mailStr = (typeof c === 'object') ? (c.valor || c.correo || c.email || '') : String(c || '');
+        const nameStr = (typeof c === 'object' && c.nombre) ? c.nombre : 'Contacto';
+        const cargoStr = (typeof c === 'object' && c.cargo) ? c.cargo : '';
+        if (mailStr && mailStr.includes('@')) {
+          emails.push({
+            valor: mailStr.trim(),
+            descripcion: `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr.trim()})`,
+            checked: emails.length === 0
+          });
+        }
+      });
+    }
+    setAvailableEmails(emails);
     setManualEmail('');
 
     // Teléfonos de la empresa
-    const phones = emp?.contactos_telefonos || [];
-    setAvailablePhones(phones.map(c => ({
-      descripcion: `${c.contacto || 'Contacto'}: ${c.valor}`,
-      valor: c.valor,
-      checked: false
-    })));
+    const phones = [];
+    if (emp && Array.isArray(emp.contactos_telefonos)) {
+      emp.contactos_telefonos.forEach((t) => {
+        const phoneStr = (typeof t === 'object') ? (t.valor || t.telefono || t.phone || '') : String(t || '');
+        const nameStr = (typeof t === 'object' && t.nombre) ? t.nombre : 'Contacto';
+        const cargoStr = (typeof t === 'object' && t.cargo) ? t.cargo : '';
+        const cleanPhone = phoneStr.replace(/[^0-9]/g, '');
+        if (cleanPhone) {
+          phones.push({
+            valor: phoneStr.trim(),
+            descripcion: `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${phoneStr.trim()})`,
+            checked: phones.length === 0
+          });
+        }
+      });
+    }
+    setAvailablePhones(phones);
     setManualPhone('');
 
     setIsSendPdfModalOpen(true);
@@ -1036,6 +1076,7 @@ export default function CapacitacionesOnlinePage({ params }) {
         body: JSON.stringify({
           emails: recipients,
           filePath: filePath,
+          customMessage: typeof customMsg === 'string' ? customMsg : undefined,
           companyName: emp ? emp.razon_social : 'Cliente',
           establishmentName: est ? est.denominacion : 'Establecimiento',
           date: formatDate(sendPdfTarget.created_at),
@@ -1062,7 +1103,7 @@ export default function CapacitacionesOnlinePage({ params }) {
   };
 
   // Enviar Registro PDF por WhatsApp
-  const handleSendPdfWhatsApp = async () => {
+  const handleSendPdfWhatsApp = async (customMsg) => {
     if (!sendPdfTarget) return;
     setSendPdfWhatsappLoading(true);
     try {
@@ -1130,7 +1171,8 @@ export default function CapacitacionesOnlinePage({ params }) {
       const tName = tenant ? (tenant.razon_social || tenant.nombre || 'Gestión SySO') : 'Gestión SySO';
       const temaName = sendPdfTarget.titulo || 'Capacitación de Higiene y Seguridad';
 
-      const textMessage = `Estimado cliente de *${empName}* (Establecimiento: *${estName}*),\n\nLe adjuntamos el *Registro Oficial de Capacitación Virtual* ("*${temaName}*") del día *${formatDate(sendPdfTarget.created_at)}* generado desde *${tName}*.\n\nPuede ver y descargar el documento PDF con las firmas correspondientes ingresando al siguiente enlace seguro:\n${pdfUrl}`;
+      const customNote = typeof customMsg === 'string' && customMsg.trim() ? `\n\n*Nota / Mensaje:* ${customMsg.trim()}` : '';
+      const textMessage = `Estimado cliente de *${empName}* (Establecimiento: *${estName}*),\n\nLe adjuntamos el *Registro Oficial de Capacitación Virtual* ("*${temaName}*") del día *${formatDate(sendPdfTarget.created_at)}* generado desde *${tName}*.${customNote}\n\nPuede ver y descargar el documento PDF con las firmas correspondientes ingresando al siguiente enlace seguro:\n${pdfUrl}`;
 
       const encodedMsg = encodeURIComponent(textMessage);
 
@@ -2721,7 +2763,16 @@ export default function CapacitacionesOnlinePage({ params }) {
 
                   {/* Cuerpo del Mensaje */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-slate-600">Cuerpo del mensaje:</label>
+                    <div className="flex items-center justify-between gap-2 min-h-[28px]">
+                      <label className="text-xs font-bold text-slate-600">Cuerpo del mensaje:</label>
+                      <AITextHelper
+                        value={shareModal.message}
+                        onChange={(val) => setShareModal(prev => ({ ...prev, message: val }))}
+                        context="Envío de invitación a Capacitación Virtual de Higiene y Seguridad Laboral"
+                        disabled={shareModal.sendingEmail}
+                        allowExpand={true}
+                      />
+                    </div>
                     <textarea
                       rows="4"
                       value={shareModal.message}
@@ -2793,7 +2844,7 @@ export default function CapacitacionesOnlinePage({ params }) {
 
                   {/* Ingreso manual */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-slate-600">Número manual (ej: 5491159969956):</label>
+                    <label className="text-xs font-bold text-slate-600">Número manual (ej: 5491123456789):</label>
                     <input
                       type="text"
                       placeholder="Código de país + área + número (sin espacios ni guiones)"
@@ -2805,7 +2856,16 @@ export default function CapacitacionesOnlinePage({ params }) {
 
                   {/* Mensaje a enviar */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-slate-600">Mensaje a enviar:</label>
+                    <div className="flex items-center justify-between gap-2 min-h-[28px]">
+                      <label className="text-xs font-bold text-slate-600">Mensaje a enviar:</label>
+                      <AITextHelper
+                        value={shareModal.message}
+                        onChange={(val) => setShareModal(prev => ({ ...prev, message: val }))}
+                        context="Envío de invitación a Capacitación Virtual de Higiene y Seguridad Laboral por WhatsApp"
+                        disabled={shareModal.sendingEmail}
+                        allowExpand={true}
+                      />
+                    </div>
                     <textarea
                       rows="4"
                       value={shareModal.message}
@@ -2932,6 +2992,7 @@ export default function CapacitacionesOnlinePage({ params }) {
         onClose={() => setIsSendPdfModalOpen(false)}
         title="Enviar Registro de Capacitación (PDF)"
         subtitle={sendPdfTarget ? `${empresas.find(e => e.id === sendPdfTarget.empresa_id)?.razon_social || 'Cliente'} — ${sendPdfTarget.titulo}` : undefined}
+        aiContext="Envío de Registro Oficial de Asistencia y Capacitación de Higiene y Seguridad Laboral"
         availableEmails={availableEmails}
         setAvailableEmails={setAvailableEmails}
         manualEmail={manualEmail}

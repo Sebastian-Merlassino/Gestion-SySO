@@ -443,16 +443,45 @@ export default function ProtocolosPuestaATierraPage({ params }) {
   // Abrir Modal de Envío (Email / WhatsApp)
   const openEmailModal = (protoItem) => {
     setMailTarget(protoItem);
-    const emp = empresas.find(e => e.id === protoItem.razon_social_id);
+    const emp = empresas.find(e => e.id === protoItem.razon_social_id || e.id === protoItem.empresa_id);
     
     // Correos
-    const emails = emp?.contactos_correos || [];
-    setAvailableEmails(emails.map(c => ({ descripcion: `${c.contacto || 'Contacto'}: ${c.valor}`, valor: c.valor, checked: false })));
+    const emails = [];
+    if (emp && Array.isArray(emp.contactos_correos)) {
+      emp.contactos_correos.forEach((c) => {
+        const mailStr = (typeof c === 'object') ? (c.valor || c.correo || c.email || '') : String(c || '');
+        const nameStr = (typeof c === 'object' && c.nombre) ? c.nombre : 'Contacto';
+        const cargoStr = (typeof c === 'object' && c.cargo) ? c.cargo : '';
+        if (mailStr && mailStr.includes('@')) {
+          emails.push({
+            valor: mailStr.trim(),
+            descripcion: `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr.trim()})`,
+            checked: emails.length === 0
+          });
+        }
+      });
+    }
+    setAvailableEmails(emails);
     setManualEmail('');
 
     // Teléfonos
-    const phones = emp?.contactos_telefonos || [];
-    setAvailablePhones(phones.map(c => ({ descripcion: `${c.contacto || 'Contacto'}: ${c.valor}`, valor: c.valor, checked: false })));
+    const phones = [];
+    if (emp && Array.isArray(emp.contactos_telefonos)) {
+      emp.contactos_telefonos.forEach((t) => {
+        const phoneStr = (typeof t === 'object') ? (t.valor || t.telefono || t.phone || '') : String(t || '');
+        const nameStr = (typeof t === 'object' && t.nombre) ? t.nombre : 'Contacto';
+        const cargoStr = (typeof t === 'object' && t.cargo) ? t.cargo : '';
+        const cleanPhone = phoneStr.replace(/[^0-9]/g, '');
+        if (cleanPhone) {
+          phones.push({
+            valor: phoneStr.trim(),
+            descripcion: `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${phoneStr.trim()})`,
+            checked: phones.length === 0
+          });
+        }
+      });
+    }
+    setAvailablePhones(phones);
     setManualPhone('');
 
     setActiveTab('email');
@@ -503,7 +532,8 @@ export default function ProtocolosPuestaATierraPage({ params }) {
       const estName = est ? est.denominacion : mailTarget.establecimiento_text || 'Establecimiento';
       const tName = tenant?.name || tenant?.razon_social || 'Gestión SySO';
 
-      const textMessage = `Estimado cliente de *${empName}* (Establecimiento: *${estName}*),\n\nLe adjuntamos el *Protocolo de Puesta a Tierra (Res. SRT 900/15)* del día *${formatDate(mailTarget.fecha_medicion)}* generado por el profesional *${mailTarget.profesional_nombre || 'Técnico SySO'}* de *${tName}*.\n\nPuede ver y descargar el documento PDF ingresando al siguiente enlace seguro:\n${signData.signedUrl}`;
+      const customNote = typeof customMsg === 'string' && customMsg.trim() ? `\n\n*Nota / Mensaje:* ${customMsg.trim()}` : '';
+      const textMessage = `Estimado cliente de *${empName}* (Establecimiento: *${estName}*),\n\nLe adjuntamos el *Protocolo de Puesta a Tierra (Res. SRT 900/15)* del día *${formatDate(mailTarget.fecha_medicion)}* generado por el profesional *${mailTarget.profesional_nombre || 'Técnico SySO'}* de *${tName}*.${customNote}\n\nPuede ver y descargar el documento PDF ingresando al siguiente enlace seguro:\n${signData.signedUrl}`;
       const encodedMsg = encodeURIComponent(textMessage);
 
       const waUrl = cleanPhone
@@ -522,7 +552,7 @@ export default function ProtocolosPuestaATierraPage({ params }) {
   };
 
   // Enviar por Correo Electrónico
-  const handleSendEmail = async () => {
+  const handleSendEmail = async (customMsg) => {
     const checked = availableEmails.filter(e => e.checked).map(e => e.valor);
     const manuals = manualEmail.split(',').map(e => e.trim()).filter(Boolean);
     const recipients = [...checked, ...manuals];
@@ -566,6 +596,7 @@ export default function ProtocolosPuestaATierraPage({ params }) {
         body: JSON.stringify({
           emails: recipients,
           filePath: filePath,
+          customMessage: typeof customMsg === 'string' ? customMsg : undefined,
           companyName: emp ? emp.razon_social : mailTarget.razon_social_text || 'Cliente',
           establishmentName: est ? est.denominacion : mailTarget.establecimiento_text || 'Establecimiento',
           date: formatDate(mailTarget.fecha_medicion),
@@ -1079,6 +1110,7 @@ export default function ProtocolosPuestaATierraPage({ params }) {
         onClose={() => setIsMailModalOpen(false)}
         title="Enviar Protocolo (PDF)"
         subtitle={mailTarget ? `${empresas.find(e => e.id === mailTarget.razon_social_id)?.razon_social || 'Cliente'} — ${formatDate(mailTarget.fecha_medicion)}` : undefined}
+        aiContext="Envío de Protocolo Oficial de Medición de Puesta a Tierra y Continuidad (Res. SRT 900/15)"
         availableEmails={availableEmails}
         setAvailableEmails={setAvailableEmails}
         manualEmail={manualEmail}

@@ -11,7 +11,7 @@ export function getSuperAdminEmails() {
   const envEmails = 
     process.env.SUPERADMIN_EMAILS || 
     process.env.NEXT_PUBLIC_SUPERADMIN_EMAILS || 
-    'sebastian.merlassino@gestionsyso.com';
+    'admin@gestionsyso.com';
     
   return envEmails
     .split(',')

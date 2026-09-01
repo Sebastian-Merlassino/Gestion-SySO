@@ -15136,4 +15136,153 @@ Se unificó estéticamente la pantalla de Perfil de Usuario (`/[tenant-slug]/pro
 - Verificación sintáctica en Node.js (`node --check`) de las rutas API modificadas.
 - Validación de generación de plantillas HTML y formateo con escape seguro contra XSS (`escapeHtml`).
 
+---
+
+## [2026-09-01] Integración de SySO-AI-Voice-Helper en Modales de Envío de Reportes (Email y WhatsApp)
+
+### Resumen de Cambios
+- **Componente Unificado de Envío (`AppSendModal.js`)**:
+  - Se incorporó el asistente inteligente `AITextHelper` (`SySO-AI-Voice-Helper`) tanto en la pestaña de **Correo Electrónico** como en la de **WhatsApp**.
+  - Se añadió un campo de texto / textarea expandible ("Mensaje o nota adicional") para que el usuario pueda escribir, dictar por voz (Web Speech / transcriptor de audio) o refinar con Inteligencia Artificial (Gemini) notas personalizadas antes de enviar cualquier reporte PDF.
+  - Se agregaron las props `customMessage`, `setCustomMessage`, `onCustomMessageChange`, `aiContext`, `messageLabel` y `messagePlaceholder`, con manejo interno o controlado.
+  - Los callbacks `onSendEmail(effectiveMessage)` y `onSendWhatsApp(effectiveMessage)` reciben automáticamente el mensaje redactado.
+- **Enrutador de Despacho de Correo (`src/app/api/send-email/route.js`)**:
+  - Se añadió el soporte formal para comprobantes fiscales de Facturación Electrónica (`isFactura`, `documentType: 'factura_electronica'`), generando un asunto profesional y nombre de adjunto coherente.
+  - Se inyecta la nota adicional (`customMessage`) en el cuerpo del correo HTML formateada con diseño responsivo, tipografía clara y escape seguro contra XSS.
+- **Actualización de 10 Secciones Operativas**:
+  - **Facturación Electrónica** (`[tenant-slug]/facturacion`): Contexto de IA para facturas y comprobantes fiscales ARCA.
+  - **Constancias de Visitas** (`[tenant-slug]/visitas`): Contexto de IA para constancias de visita técnica e inspecciones.
+  - **Protocolo de Ruido** (`[tenant-slug]/protocolos/ruido`): Contexto de IA para mediciones de ruido laboral (Res. SRT 85/12).
+  - **Protocolo de Puesta a Tierra** (`[tenant-slug]/protocolos/puesta-a-tierra`): Contexto de IA para mediciones de PAT y continuidad (Res. SRT 900/15).
+  - **Protocolo de Iluminación** (`[tenant-slug]/protocolos/iluminacion`): Contexto de IA para mediciones de iluminación laboral (Res. SRT 84/12).
+  - **Protocolo de Ergonomía** (`[tenant-slug]/protocolos/ergonomia`): Contexto de IA para estudios ergonómicos laborales (Res. SRT 886/15).
+  - **Control Eléctrico** (`[tenant-slug]/control-electrico`): Contexto de IA para inspecciones visuales de instalaciones y tableros.
+  - **Checklists Personalizados** (`[tenant-slug]/checklist-personalizados`): Contexto de IA para auditorías y listas de verificación.
+  - **Capacitaciones Online (Registro y Compartir)** (`[tenant-slug]/capacitaciones-online`): Contexto de IA para registros oficiales de asistencia y mensajes de invitación a capacitaciones virtuales.
+  - **Avisos de Riesgo** (`[tenant-slug]/avisos`): Contexto de IA para notificaciones de condiciones peligrosas.
+
+### Decisiones Clave
+- **Unificación y Consistencia Total**: Al encapsular `AITextHelper` dentro de `AppSendModal`, todas las secciones que consumen el modal ganan inmediatamente dictado por voz, corrección técnica por IA y ampliación a pantalla completa sin duplicación de código.
+- **Contextualización Técnica de la IA**: Cada sección suministra su propio `aiContext`, lo que permite al modelo Gemini generar o pulir redacciones altamente precisas acordes al marco normativo de cada disciplina (SRT 84/12, 85/12, 900/15, 886/15, etc.).
+
+### Skills Utilizadas
+- `gestion-syso-ai-voice-helper`
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/components/ui/AppSendModal.js`
+- `[MODIFY] src/app/api/send-email/route.js`
+- `[MODIFY] src/app/[tenant-slug]/facturacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build`) verificada de punta a punta.
+
+---
+
+## [2026-09-01] Sanitización y Anonimización Total de Datos Reales en Placeholders y Fallbacks
+
+### Resumen de Cambios
+- **Modales de WhatsApp (`AppSendModal.js` y `capacitaciones-online/page.js`)**:
+  - Se sustituyó el número de teléfono real utilizado en la etiqueta/placeholder de ejemplo (`5491159969956`) por el número ficticio y genérico estándar: `Número Manual (ej: 5491123456789):`.
+- **Formularios y Vistas de Facturación (`ConfiguracionArca.js`)**:
+  - Se reemplazó el nombre real del desarrollador en el placeholder de Razón Social fiscal (`placeholder="Ej: Merlassino Sebastian Alejandro"`) por `placeholder="Ej: Consultora SySO S.A. o Pérez Juan Carlos"`.
+- **Limpieza de Fallbacks de Contacto en Módulos Técnicos y Reportes PDF**:
+  - En todas las secciones operativas (`visitas`, `programa`, `matriz-riesgos`, `correctivas`, `extintores`, `dashboard`, `control-electrico`, `checklist-personalizados`, `capacitacion`, `avisos`, `accidentes` y `capacitaciones-online/utils/pdfGenerator.js`), se sanearon los teléfonos y correos personales predeterminados utilizados como fallback, adoptando cadenas vacías y casillas genéricas de servicio (`contacto@gestionsyso.com`).
+  - En `matriz-riesgos/page.js`, se anonimizó el miembro mock por un nombre ficticio genérico (`Mariano Fernández`).
+  - En `src/lib/adminAuth.js`, se fijó el fallback a la casilla genérica `admin@gestionsyso.com`.
+
+### Decisiones Clave
+- **Privacidad Estricta en Código Fuente**: Erradicación completa de cualquier dato sensible o personal directo en componentes visuales, mock data, ejemplos y constantes por defecto.
+
+### Archivos Modificados
+- `[MODIFY] src/components/ui/AppSendModal.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] src/app/[tenant-slug]/facturacion/components/ConfiguracionArca.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`
+- `[MODIFY] src/lib/adminAuth.js`
+- `[MODIFY] docs/design/PDF_STYLE_STANDARD.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-09-01] Corrección de Carga de Contactos del Cliente en Facturación y Módulos del Sistema
+
+### Resumen de Cambios
+- **Facturación Electrónica (`facturacion/page.js`)**:
+  - Se corrigió la consulta de empresas clientes para seleccionar los arrays JSON: `contactos_correos`, `contactos_telefonos` y `contactos_facturacion`.
+  - En `handleOpenSendModal`, se implementó la resolución y mapeo completo de contactos del cliente.
+  - Se añadieron prioritariamente los **contactos de facturación** (`contactos_facturacion`) con la etiqueta visual `[Facturación] Nombre (email)`, seguido de los contactos generales y números de WhatsApp, con preselección automática del destinatario principal.
+- **Protocolos Técnicos y Módulos Operativos**:
+  - En `ruido`, `puesta-a-tierra`, `iluminacion`, `ergonomia`, `capacitaciones-online`, `visitas`, `control-electrico`, `checklist-personalizados` y `avisos`, se unificó y blindó el formateo de contactos para admitir todos los esquemas de propiedades (`valor`, `correo`, `email`, `telefono`, `phone`, `nombre`, `cargo`), preseleccionando por defecto el primer contacto para agilizar el despacho.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/facturacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-09-01] Corrección de ReferenceError en Generador PDF de Facturación Electrónica
+
+### Resumen de Cambios
+- **`facturaPdfGenerator.js`**:
+  - Se corrigió el error `ReferenceError: details is not defined` al generar el comprobante PDF para despacho por correo o descarga.
+  - Se extrajo e instanció correctamente el objeto `voucherDetails` y su bandera booleana `isInterno` para determinar si se renderiza el pie de página de control interno o el código QR oficial de ARCA.
+  - Se saneó el fallback de CUIT emisor a un valor genérico institucional.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/facturacion/utils/facturaPdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-09-01] Optimización de Plantilla de Correo para Facturación y Mensajes Adicionales
+
+### Resumen de Cambios
+- **Plantilla de Envío de Correo (`api/send-email/route.js`)**:
+  - Se adecuó la redacción para envíos de facturación electrónica y comprobantes:
+    - Cuerpo principal: *"Se adjunta el comprobante / factura correspondiente a los servicios brindados."* (en lugar de *"documentación técnica correspondiente a sus instalaciones"*).
+    - Cajas de pie y adjunto: referencias dinámicas adaptadas a comprobante / factura.
+  - Se estructuró un bloque dedicado y destacado para los **mensajes o comentarios adicionales** (`💬 Mensaje adicional: ...`) con fondo estilizado y borde con el color corporativo del tenant, mostrándose de forma clara y armoniosa junto al saludo inicial.
+
+### Archivos Modificados
+- `[MODIFY] src/app/api/send-email/route.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+
+
+
+
+
 

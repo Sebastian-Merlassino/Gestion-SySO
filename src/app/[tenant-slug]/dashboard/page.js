@@ -200,7 +200,7 @@ export default function TenantDashboard({ params }) {
   const [activeChartIndex, setActiveChartIndex] = useState('incidencia');
   const [showIndicesGuide, setShowIndicesGuide] = useState(false);
   const [activeTab, setActiveTab] = useState('vencimientos'); // 'vencimientos' o 'calendario'
-  const [adminContact, setAdminContact] = useState({ email: 'info@gestionsyso.com', phone: '1159969956 / 1132296691' });
+  const [adminContact, setAdminContact] = useState({ email: 'contacto@gestionsyso.com', phone: '' });
 
   // Estadísticas ficticias/reales
   const [stats, setStats] = useState({
@@ -302,8 +302,8 @@ export default function TenantDashboard({ params }) {
 
         if (adminProf) {
           setAdminContact({
-            email: adminProf.email || 'info@gestionsyso.com',
-            phone: adminProf.phone || '1159969956 / 1132296691'
+            email: adminProf.email || 'contacto@gestionsyso.com',
+            phone: adminProf.phone || ''
           });
         }
 

@@ -2067,7 +2067,7 @@ export default function AccidentesPage({ params }) {
       // Pie de página: Consultora en bold y los datos de contacto en normal
       const boldText = tenant?.name || 'Gestión SySO';
       const phoneVal = profile?.phone || profile?.telefono || '—';
-      const emailVal = profile?.email || 'sebastian.merlassino@gestionsyso.com';
+      const emailVal = profile?.email || tenant?.email || 'contacto@gestionsyso.com';
       const normalText = `  •  Tel: ${phoneVal}  •  Email: ${emailVal}`;
 
       doc.setFontSize(7.5);

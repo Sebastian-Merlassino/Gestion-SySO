@@ -173,7 +173,7 @@ export default function VisitasPage({ params }) {
   const [visitas, setVisitas] = useState([]);
   const [miembrosList, setMiembrosList] = useState([]);
   const [temasList, setTemasList] = useState([]);
-  const [adminContact, setAdminContact] = useState({ email: 'info@gestionsyso.com', phone: '1159969956 / 1132296691' });
+  const [adminContact, setAdminContact] = useState({ email: 'contacto@gestionsyso.com', phone: '' });
 
   // Estados del CRUD / Vista Formulario
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -677,8 +677,8 @@ export default function VisitasPage({ params }) {
 
       if (adminProf) {
         setAdminContact({
-          email: adminProf.email || 'info@gestionsyso.com',
-          phone: adminProf.phone || '1159969956 / 1132296691'
+          email: adminProf.email || 'contacto@gestionsyso.com',
+          phone: adminProf.phone || ''
         });
       }
 
@@ -1633,17 +1633,17 @@ export default function VisitasPage({ params }) {
     // Cargar Correos
     if (emp && emp.contactos_correos && emp.contactos_correos.length > 0) {
       const formatted = emp.contactos_correos.map((c, i) => {
-        const mailStr = (typeof c === 'object') ? (c.correo || c.valor || '') : String(c);
+        const mailStr = (typeof c === 'object') ? (c.valor || c.correo || c.email || '') : String(c || '');
         const nameStr = (typeof c === 'object' && c.nombre) ? c.nombre : 'Contacto';
         const cargoStr = (typeof c === 'object' && c.cargo) ? c.cargo : '';
         return {
-          valor: mailStr,
+          valor: mailStr.trim(),
           descripcion: nameStr 
-            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr})` 
-            : mailStr,
+            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr.trim()})` 
+            : mailStr.trim(),
           checked: i === 0
         };
-      }).filter(item => item.valor);
+      }).filter(item => item.valor && item.valor.includes('@'));
       setAvailableEmails(formatted);
     } else {
       setAvailableEmails([]);
@@ -1653,17 +1653,17 @@ export default function VisitasPage({ params }) {
     // Cargar Teléfonos
     if (emp && emp.contactos_telefonos && emp.contactos_telefonos.length > 0) {
       const formatted = emp.contactos_telefonos.map((t, i) => {
-        const phoneStr = (typeof t === 'object') ? (t.telefono || t.valor || '') : String(t);
+        const phoneStr = (typeof t === 'object') ? (t.valor || t.telefono || t.phone || '') : String(t || '');
         const nameStr = (typeof t === 'object' && t.nombre) ? t.nombre : 'Contacto';
         const cargoStr = (typeof t === 'object' && t.cargo) ? t.cargo : '';
         return {
-          valor: phoneStr,
+          valor: phoneStr.trim(),
           descripcion: nameStr 
-            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${phoneStr})` 
-            : phoneStr,
+            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${phoneStr.trim()})` 
+            : phoneStr.trim(),
           checked: i === 0
         };
-      }).filter(item => item.valor);
+      }).filter(item => item.valor && item.valor.replace(/[^0-9]/g, ''));
       setAvailablePhones(formatted);
     } else {
       setAvailablePhones([]);
@@ -1672,8 +1672,8 @@ export default function VisitasPage({ params }) {
     setIsMailModalOpen(true);
   };
 
-  // Enviar correo electrónico
-  const handleSendEmail = async () => {
+  // Enviar por Email
+  const handleSendEmail = async (customMsg) => {
     const checkedEmails = availableEmails.filter(e => e.checked).map(e => e.valor);
     const manualList = manualEmail.split(',').map(e => e.trim()).filter(Boolean);
     const recipients = [...checkedEmails, ...manualList];
@@ -1729,6 +1729,7 @@ export default function VisitasPage({ params }) {
         body: JSON.stringify({
           emails: recipients,
           filePath,
+          customMessage: typeof customMsg === 'string' ? customMsg : undefined,
           companyName: emp ? emp.razon_social : 'Cliente',
           establishmentName: est ? est.denominacion : 'Establecimiento',
           date: formatDate(mailTargetVisita.fecha),
@@ -1753,7 +1754,7 @@ export default function VisitasPage({ params }) {
   };
 
   // Enviar por WhatsApp
-  const handleSendWhatsApp = async () => {
+  const handleSendWhatsApp = async (customMsg) => {
     setWhatsappLoading(true);
     try {
       // 1. Obtener destinatario (si hay)
@@ -1805,7 +1806,8 @@ export default function VisitasPage({ params }) {
 
       // 5. Construir mensaje descriptivo
       const tName = tenant ? (tenant.razon_social || tenant.nombre || 'Gestión SySO') : 'Gestión SySO';
-      const textMessage = `Estimado cliente de *${empName}* (Establecimiento: *${estName}*),\n\nLe adjuntamos la *Constancia de Visita* del día *${formatDate(mailTargetVisita.fecha)}* generada por el profesional *${mailTargetVisita.profesional_nombre}* de *${tName}*.\n\nPuede ver y descargar el documento PDF ingresando al siguiente enlace seguro:\n${pdfUrl}`;
+      const customNote = typeof customMsg === 'string' && customMsg.trim() ? `\n\n*Nota / Mensaje:* ${customMsg.trim()}` : '';
+      const textMessage = `Estimado cliente de *${empName}* (Establecimiento: *${estName}*),\n\nLe adjuntamos la *Constancia de Visita* del día *${formatDate(mailTargetVisita.fecha)}* generada por el profesional *${mailTargetVisita.profesional_nombre}* de *${tName}*.${customNote}\n\nPuede ver y descargar el documento PDF ingresando al siguiente enlace seguro:\n${pdfUrl}`;
       
       const encodedMsg = encodeURIComponent(textMessage);
       
@@ -3329,6 +3331,7 @@ export default function VisitasPage({ params }) {
         onClose={() => setIsMailModalOpen(false)}
         title="Enviar Constancia (PDF)"
         subtitle={mailTargetVisita ? `${empresas.find(e => e.id === mailTargetVisita.empresa_id)?.razon_social || 'Cliente'} — ${formatDate(mailTargetVisita.fecha)}` : undefined}
+        aiContext="Envío de Constancia Oficial de Visita Técnica de Higiene y Seguridad Laboral"
         availableEmails={availableEmails}
         setAvailableEmails={setAvailableEmails}
         manualEmail={manualEmail}

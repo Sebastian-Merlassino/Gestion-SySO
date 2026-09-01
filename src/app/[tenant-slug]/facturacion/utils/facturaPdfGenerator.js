@@ -89,7 +89,8 @@ export async function generateFacturaPdf({ factura, config, tenant = null, profi
   const contentWidth = pageWidth - (margin * 2); // 186
 
   const primaryColor = getPdfPrimaryColor(tenant || profile?.tenants || profile?.primary_color);
-  const { letra, desc, codigo } = getVoucherTypeDetails(factura?.tipo_comprobante);
+  const voucherDetails = getVoucherTypeDetails(factura?.tipo_comprobante);
+  const { letra, desc, codigo, isInterno } = voucherDetails;
 
   const formattedPtoVta = String(factura?.punto_venta || config?.punto_venta || 1).padStart(5, '0');
   const formattedNro = String(factura?.numero_comprobante || 0).padStart(8, '0');
@@ -394,7 +395,7 @@ export async function generateFacturaPdf({ factura, config, tenant = null, profi
   setDrawColor(doc, PDF_THEME.border);
   doc.roundedRect(margin, footerBoxY, contentWidth, footerBoxHeight, 2, 2, 'FD');
 
-  if (details.isInterno) {
+  if (isInterno) {
     // Left Box: Internal badge
     setFillColor(doc, [243, 244, 246]);
     setDrawColor(doc, [209, 213, 219]);
@@ -435,7 +436,7 @@ export async function generateFacturaPdf({ factura, config, tenant = null, profi
     try {
       const qrPayloadUrl = generateArcaQrUrl({
         fecha: factura?.fecha_emision || new Date().toISOString().split('T')[0],
-        cuitEmisor: config?.cuit || '20275366901',
+        cuitEmisor: config?.cuit || '30712345678',
         ptoVta: factura?.punto_venta || config?.punto_venta || 1,
         tipoCmp: factura?.tipo_comprobante || 11,
         nroCmp: factura?.numero_comprobante || 0,

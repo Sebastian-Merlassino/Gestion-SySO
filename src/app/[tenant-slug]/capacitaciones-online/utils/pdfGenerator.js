@@ -689,8 +689,8 @@ export async function generateCapacitacionOnlinePdf({
 
   // Resolución de datos dinámicos según requerimiento
   const companyName = tenant?.name || tenant?.razon_social || profile?.nombre_comercial || profile?.empresa || adminProfile?.nombre_comercial || 'Gestión SySO';
-  const phoneVal = profile?.phone || profile?.telefono || tenant?.phone || tenant?.telefono || '1159969956';
-  const emailVal = profile?.email || tenant?.email || tenant?.correo || 'sebastian.merlassino@gestionsyso.com';
+  const phoneVal = profile?.phone || profile?.telefono || tenant?.phone || tenant?.telefono || '';
+  const emailVal = profile?.email || tenant?.email || tenant?.correo || 'contacto@gestionsyso.com';
 
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);

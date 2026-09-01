@@ -58,11 +58,9 @@ export default function ChecklistPersonalizadosPage({ params }) {
   const tenantSlug = params['tenant-slug'];
 
   // ==========================================
-  // ESTADOS Y REFERENCIAS
-  // ==========================================
   const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
-  const [adminContact, setAdminContact] = useState({ email: 'info@gestionsyso.com', phone: '1159969956 / 1132296691' });
+  const [adminContact, setAdminContact] = useState({ email: 'contacto@gestionsyso.com', phone: '' });
   const [empresas, setEmpresas] = useState([]);
   const [allEstablecimientos, setAllEstablecimientos] = useState([]);
   const [miembrosList, setMiembrosList] = useState([]);
@@ -1629,17 +1627,17 @@ export default function ChecklistPersonalizadosPage({ params }) {
     // Cargar Correos de la Empresa
     if (emp && emp.contactos_correos && emp.contactos_correos.length > 0) {
       const formattedEmails = emp.contactos_correos.map((c, i) => {
-        const mailStr = (typeof c === 'object') ? (c.correo || c.valor || '') : String(c);
+        const mailStr = (typeof c === 'object') ? (c.valor || c.correo || c.email || '') : String(c || '');
         const nameStr = (typeof c === 'object' && c.nombre) ? c.nombre : 'Contacto';
         const cargoStr = (typeof c === 'object' && c.cargo) ? c.cargo : '';
         return {
-          valor: mailStr,
+          valor: mailStr.trim(),
           descripcion: nameStr 
-            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr})` 
-            : mailStr,
+            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr.trim()})` 
+            : mailStr.trim(),
           checked: i === 0
         };
-      }).filter(item => item.valor);
+      }).filter(item => item.valor && item.valor.includes('@'));
       setAvailableEmails(formattedEmails);
     } else {
       setAvailableEmails([]);
@@ -1648,17 +1646,17 @@ export default function ChecklistPersonalizadosPage({ params }) {
     // Cargar Teléfonos de la Empresa
     if (emp && emp.contactos_telefonos && emp.contactos_telefonos.length > 0) {
       const formattedPhones = emp.contactos_telefonos.map((t, i) => {
-        const phoneStr = (typeof t === 'object') ? (t.telefono || t.valor || '') : String(t);
+        const phoneStr = (typeof t === 'object') ? (t.valor || t.telefono || t.phone || '') : String(t || '');
         const nameStr = (typeof t === 'object' && t.nombre) ? t.nombre : 'Contacto';
         const cargoStr = (typeof t === 'object' && t.cargo) ? t.cargo : '';
         return {
-          valor: phoneStr,
+          valor: phoneStr.trim(),
           descripcion: nameStr 
-            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${phoneStr})` 
-            : phoneStr,
+            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${phoneStr.trim()})` 
+            : phoneStr.trim(),
           checked: i === 0
         };
-      }).filter(item => item.valor);
+      }).filter(item => item.valor && item.valor.replace(/[^0-9]/g, ''));
       setAvailablePhones(formattedPhones);
     } else {
       setAvailablePhones([]);
@@ -1713,10 +1711,11 @@ export default function ChecklistPersonalizadosPage({ params }) {
         }
       }
 
-      const mailBody = {
+      const payload = {
         emails: recipients,
-        filePath: relativePath,
-        companyName: emp?.razon_social || 'Cliente',
+        filePath,
+        customMessage: typeof customMsg === 'string' ? customMsg : undefined,
+        companyName: emp?.razon_social || 'N/A',
         establishmentName: est?.denominacion || 'N/A',
         date: formatDate(mailTargetInspeccion.fecha),
         inspectorName: mailTargetInspeccion.responsable_higiene_seguridad_nombre || 'Profesional SySO',
@@ -1730,7 +1729,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
       const res = await fetch('/api/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(mailBody)
+        body: JSON.stringify(payload)
       });
 
       const resJson = await res.json();
@@ -1746,7 +1745,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
     }
   };
 
-  const handleSendWhatsApp = async () => {
+  const handleSendWhatsApp = async (customMsg) => {
     if (!mailTargetInspeccion) return;
     setWhatsappLoading(true);
     try {
@@ -1802,7 +1801,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
       const inspDate = formatDate(mailTargetInspeccion.fecha);
       const inspResp = mailTargetInspeccion.responsable_higiene_seguridad_nombre || 'Profesional SySO';
 
-      const textMessage = `Estimado cliente de *${empName}* (Establecimiento: *${estName}*),\n\nLe adjuntamos el reporte del *${checklistName}* del día *${inspDate}* realizado por el profesional *${inspResp}* de *${tName}*.\n\nPuede ver y descargar el documento PDF ingresando al siguiente enlace seguro:\n${pdfUrl}`;
+      const customNote = typeof customMsg === 'string' && customMsg.trim() ? `\n\n*Nota / Mensaje:* ${customMsg.trim()}` : '';
+      const textMessage = `Estimado cliente de *${empName}* (Establecimiento: *${estName}*),\n\nLe adjuntamos el reporte del *${checklistName}* del día *${inspDate}* realizado por el profesional *${inspResp}* de *${tName}*.${customNote}\n\nPuede ver y descargar el documento PDF ingresando al siguiente enlace seguro:\n${pdfUrl}`;
       const encodedMsg = encodeURIComponent(textMessage);
 
       let waUrl = '';
@@ -3088,6 +3088,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
         onClose={() => setIsMailModalOpen(false)}
         title="Enviar Checklist (PDF)"
         subtitle={mailTargetInspeccion ? `${templates.find(t => t.id === mailTargetInspeccion.template_id)?.nombre || 'Inspección'} — ${empresas.find(e => e.id === mailTargetInspeccion.empresa_id)?.razon_social || 'Cliente'}` : undefined}
+        aiContext="Envío de Informe de Checklist e Inspección de Seguridad e Higiene"
         availableEmails={availableEmails}
         setAvailableEmails={setAvailableEmails}
         manualEmail={manualEmail}

@@ -89,7 +89,7 @@ export default function ControlElectricoPage({ params }) {
   // Estados estructurales
   const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
-  const [adminContact, setAdminContact] = useState({ email: 'info@gestionsyso.com', phone: '1159969956 / 1132296691' });
+  const [adminContact, setAdminContact] = useState({ email: 'contacto@gestionsyso.com', phone: '' });
   const [empresas, setEmpresas] = useState([]);
   const [allEstablecimientos, setAllEstablecimientos] = useState([]);
   const [miembrosList, setMiembrosList] = useState([]);
@@ -429,8 +429,8 @@ export default function ControlElectricoPage({ params }) {
 
       if (adminProf) {
         setAdminContact({
-          email: adminProf.email || 'info@gestionsyso.com',
-          phone: adminProf.phone || '1159969956 / 1132296691'
+          email: adminProf.email || 'contacto@gestionsyso.com',
+          phone: adminProf.phone || ''
         });
       }
 
@@ -1610,7 +1610,7 @@ export default function ControlElectricoPage({ params }) {
         const boldText = companyName || tenant?.name || 'Gestión SySO';
         const phoneVal = profile?.role === 'miembro' ? (profile?.phone || '') : adminContact.phone;
         const emailVal = profile?.role === 'miembro' ? (profile?.email || '') : adminContact.email;
-        const normalText = `  •  Tel: ${phoneVal || '1159969956 / 1132296691'}  •  Email: ${emailVal || 'info@gestionsyso.com'}`;
+        const normalText = `  •  Tel: ${phoneVal || '—'}  •  Email: ${emailVal || 'contacto@gestionsyso.com'}`;
 
         d.setFontSize(7.5);
         d.setTextColor(71, 85, 105); // COLOR_SLATE_700 RGB
@@ -1696,17 +1696,17 @@ export default function ControlElectricoPage({ params }) {
     // Cargar Correos
     if (emp && emp.contactos_correos && emp.contactos_correos.length > 0) {
       const formattedEmails = emp.contactos_correos.map((cont, i) => {
-        const mailStr = (typeof cont === 'object') ? (cont.correo || cont.valor || '') : String(cont);
+        const mailStr = (typeof cont === 'object') ? (cont.valor || cont.correo || cont.email || '') : String(cont || '');
         const nameStr = (typeof cont === 'object' && cont.nombre) ? cont.nombre : 'Contacto';
         const cargoStr = (typeof cont === 'object' && cont.cargo) ? cont.cargo : '';
         return {
-          valor: mailStr,
+          valor: mailStr.trim(),
           descripcion: nameStr 
-            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr})` 
-            : mailStr,
+            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr.trim()})` 
+            : mailStr.trim(),
           checked: i === 0
         };
-      }).filter(item => item.valor);
+      }).filter(item => item.valor && item.valor.includes('@'));
       setAvailableEmails(formattedEmails);
     } else {
       setAvailableEmails([]);
@@ -1715,17 +1715,17 @@ export default function ControlElectricoPage({ params }) {
     // Cargar Teléfonos
     if (emp && emp.contactos_telefonos && emp.contactos_telefonos.length > 0) {
       const formattedPhones = emp.contactos_telefonos.map((t, i) => {
-        const phoneStr = (typeof t === 'object') ? (t.telefono || t.valor || '') : String(t);
+        const phoneStr = (typeof t === 'object') ? (t.valor || t.telefono || t.phone || '') : String(t || '');
         const nameStr = (typeof t === 'object' && t.nombre) ? t.nombre : 'Contacto';
         const cargoStr = (typeof t === 'object' && t.cargo) ? t.cargo : '';
         return {
-          valor: phoneStr,
+          valor: phoneStr.trim(),
           descripcion: nameStr 
-            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${phoneStr})` 
-            : phoneStr,
+            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${phoneStr.trim()})` 
+            : phoneStr.trim(),
           checked: i === 0
         };
-      }).filter(item => item.valor);
+      }).filter(item => item.valor && item.valor.replace(/[^0-9]/g, ''));
       setAvailablePhones(formattedPhones);
     } else {
       setAvailablePhones([]);
@@ -1788,7 +1788,8 @@ export default function ControlElectricoPage({ params }) {
       const docDate = formatDate(mailTargetControl.fecha);
       const inspectorName = mailTargetControl.profesional_nombre || 'Profesional SySO';
 
-      const textMessage = `Estimado cliente de *${empName}* (Establecimiento: *${estName}*),\n\nLe adjuntamos el reporte de *Inspección Visual de Instalaciones Eléctricas* del día *${docDate}* realizada por el profesional *${inspectorName}* de *${tName}*.\n\nPuede ver y descargar el documento PDF ingresando al siguiente enlace seguro:\n${pdfUrl}`;
+      const customNote = typeof customMsg === 'string' && customMsg.trim() ? `\n\n*Nota / Mensaje:* ${customMsg.trim()}` : '';
+      const textMessage = `Estimado cliente de *${empName}* (Establecimiento: *${estName}*),\n\nLe adjuntamos el reporte de *Inspección Visual de Instalaciones Eléctricas* del día *${docDate}* realizada por el profesional *${inspectorName}* de *${tName}*.${customNote}\n\nPuede ver y descargar el documento PDF ingresando al siguiente enlace seguro:\n${pdfUrl}`;
       const encodedMsg = encodeURIComponent(textMessage);
 
       let waUrl = '';
@@ -1809,8 +1810,7 @@ export default function ControlElectricoPage({ params }) {
     }
   };
 
-  const handleSendEmail = async (e) => {
-    if (e) e.preventDefault();
+  const handleSendEmail = async (customMsg) => {
     if (!mailTargetControl) return;
 
     const checkedEmails = availableEmails.filter(em => em.checked).map(em => em.valor);
@@ -1863,6 +1863,7 @@ export default function ControlElectricoPage({ params }) {
       const payload = {
         emails: recipients,
         filePath,
+        customMessage: typeof customMsg === 'string' ? customMsg : undefined,
         companyName: emp ? emp.razon_social : 'N/A',
         establishmentName: est ? est.denominacion : 'N/A',
         date: formatDate(mailTargetControl.fecha),
@@ -2725,6 +2726,7 @@ export default function ControlElectricoPage({ params }) {
         onClose={() => setIsMailModalOpen(false)}
         title="Enviar Control Eléctrico (PDF)"
         subtitle={mailTargetControl ? `${empresas.find(e => e.id === mailTargetControl.empresa_id)?.razon_social || 'Cliente'} — ${formatDate(mailTargetControl.fecha)}` : undefined}
+        aiContext="Envío de Inspección Visual de Instalaciones y Tableros Eléctricos"
         availableEmails={availableEmails}
         setAvailableEmails={setAvailableEmails}
         manualEmail={manualEmail}

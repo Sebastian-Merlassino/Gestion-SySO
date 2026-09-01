@@ -76,7 +76,7 @@ Todo reporte debe cerrarse ejecutando el footer en dos pasadas sobre la totalida
 export function drawPdfFooter(doc, options = {}) {
   const {
     consultora = 'Gestión SySO — Soluciones Integrales en Higiene y Seguridad',
-    telefono = '1159969956',
+    telefono = '1123456789',
     email = 'soporte@gestionsyso.com',
     codigo = '',
     orientation = 'portrait'

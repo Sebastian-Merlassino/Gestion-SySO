@@ -173,7 +173,7 @@ export default function AvisosRiesgoPage({ params }) {
   const [observaciones, setObservaciones] = useState('');
   const [loadedFindings, setLoadedFindings] = useState([]);
   const [isLoadingFindings, setIsLoadingFindings] = useState(false);
-  const [adminContact, setAdminContact] = useState({ email: 'info@gestionsyso.com', phone: '1159969956 / 1132296691' });
+  const [adminContact, setAdminContact] = useState({ email: 'contacto@gestionsyso.com', phone: '' });
 
   // Firma a mano (Canvas)
   const canvasRef = useRef(null);
@@ -412,8 +412,8 @@ export default function AvisosRiesgoPage({ params }) {
 
       if (adminProf) {
         setAdminContact({
-          email: adminProf.email || 'info@gestionsyso.com',
-          phone: adminProf.phone || '1159969956 / 1132296691'
+          email: adminProf.email || 'contacto@gestionsyso.com',
+          phone: adminProf.phone || ''
         });
       }
 
@@ -1791,17 +1791,17 @@ export default function AvisosRiesgoPage({ params }) {
     // Cargar Correos
     if (emp && emp.contactos_correos && emp.contactos_correos.length > 0) {
       const formatted = emp.contactos_correos.map((c, i) => {
-        const mailStr = (typeof c === 'object') ? (c.correo || c.valor || '') : String(c);
+        const mailStr = (typeof c === 'object') ? (c.valor || c.correo || c.email || '') : String(c || '');
         const nameStr = (typeof c === 'object' && c.nombre) ? c.nombre : 'Contacto';
         const cargoStr = (typeof c === 'object' && c.cargo) ? c.cargo : '';
         return {
-          valor: mailStr,
+          valor: mailStr.trim(),
           descripcion: nameStr 
-            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr})` 
-            : mailStr,
+            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr.trim()})` 
+            : mailStr.trim(),
           checked: i === 0
         };
-      }).filter(item => item.valor);
+      }).filter(item => item.valor && item.valor.includes('@'));
       setAvailableEmails(formatted);
     } else {
       setAvailableEmails([]);
@@ -1811,17 +1811,17 @@ export default function AvisosRiesgoPage({ params }) {
     // Cargar Teléfonos
     if (emp && emp.contactos_telefonos && emp.contactos_telefonos.length > 0) {
       const formatted = emp.contactos_telefonos.map((t, i) => {
-        const phoneStr = (typeof t === 'object') ? (t.telefono || t.valor || '') : String(t);
+        const phoneStr = (typeof t === 'object') ? (t.valor || t.telefono || t.phone || '') : String(t || '');
         const nameStr = (typeof t === 'object' && t.nombre) ? t.nombre : 'Contacto';
         const cargoStr = (typeof t === 'object' && t.cargo) ? t.cargo : '';
         return {
-          valor: phoneStr,
+          valor: phoneStr.trim(),
           descripcion: nameStr 
-            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${phoneStr})` 
-            : phoneStr,
+            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${phoneStr.trim()})` 
+            : phoneStr.trim(),
           checked: i === 0
         };
-      }).filter(item => item.valor);
+      }).filter(item => item.valor && item.valor.replace(/[^0-9]/g, ''));
       setAvailablePhones(formatted);
     } else {
       setAvailablePhones([]);
@@ -1830,12 +1830,12 @@ export default function AvisosRiesgoPage({ params }) {
     setIsMailModalOpen(true);
   };
 
-  const handleSendEmail = async (e) => {
-    if (e) e.preventDefault();
+  // Enviar por Correo Electrónico
+  const handleSendEmail = async (customMsg) => {
     if (!mailTargetAviso) return;
-    
-    const checkedEmails = availableEmails.filter(e => e.checked).map(e => e.valor);
-    const manualList = manualEmail.split(',').map(e => e.trim()).filter(Boolean);
+
+    const checkedEmails = availableEmails.filter(em => em.checked).map(em => em.valor);
+    const manualList = manualEmail.split(',').map(em => em.trim()).filter(Boolean);
     const recipients = [...checkedEmails, ...manualList];
 
     if (recipients.length === 0) {
@@ -1845,15 +1845,13 @@ export default function AvisosRiesgoPage({ params }) {
 
     setMailLoading(true);
     try {
-      const doc = await generateAvisoPdf(mailTargetAviso, false);
-      if (!doc) throw new Error('No se pudo generar el PDF del aviso.');
-      
-      const pdfBlob = doc.output('blob');
-      
-      // Subir archivo al storage en la carpeta del usuario (RSL lo valida)
+      const docPdf = await generateAvisoPdf(mailTargetAviso, false);
+      if (!docPdf) throw new Error('No se pudo generar el reporte PDF.');
+
+      const pdfBlob = docPdf.output('blob');
       const fileId = crypto.randomUUID();
       const filePath = `${profile?.id || 'anonymous'}/aviso_${mailTargetAviso.id}_${fileId}.pdf`;
-      
+
       const { error: uploadError } = await supabase.storage
         .from('documents')
         .upload(filePath, pdfBlob, {
@@ -1862,19 +1860,18 @@ export default function AvisosRiesgoPage({ params }) {
         });
 
       if (uploadError) {
-        throw new Error(`Error al subir el adjunto a Storage: ${uploadError.message}`);
+        throw new Error(`Error al subir el reporte a Storage: ${uploadError.message}`);
       }
 
-      const emp = empresas.find(e => e.id === mailTargetAviso.empresa_id);
-      const est = allEstablecimientos.find(e => e.id === mailTargetAviso.establecimiento_id);
+      const emp = empresas.find(emp => emp.id === mailTargetAviso.empresa_id);
+      const est = allEstablecimientos.find(est => est.id === mailTargetAviso.establecimiento_id);
 
-      // Obtener logo del tenant como base64 (para el encabezado del email)
       let tenantLogoBase64 = '';
       if (tenant && tenant.logo_1_url) {
         try {
           tenantLogoBase64 = await getBase64ImageFromUrl(tenant.logo_1_url);
           if (tenantLogoBase64) {
-            tenantLogoBase64 = await resizeImage(tenantLogoBase64, 400, 200);
+            tenantLogoBase64 = await resizeImageForPdf(tenantLogoBase64, 400, 200);
           }
         } catch (logoErr) {
           console.warn('No se pudo cargar el logo para el email:', logoErr);
@@ -1884,6 +1881,7 @@ export default function AvisosRiesgoPage({ params }) {
       const payload = {
         emails: recipients,
         filePath,
+        customMessage: typeof customMsg === 'string' ? customMsg : undefined,
         companyName: emp ? emp.razon_social : 'N/A',
         establishmentName: est ? est.denominacion : 'N/A',
         date: formatDate(mailTargetAviso.fecha),
@@ -1916,7 +1914,7 @@ export default function AvisosRiesgoPage({ params }) {
   };
 
   // Enviar por WhatsApp
-  const handleSendWhatsApp = async () => {
+  const handleSendWhatsApp = async (customMsg) => {
     setWhatsappLoading(true);
     try {
       // 1. Obtener destinatario (si hay)
@@ -1968,7 +1966,8 @@ export default function AvisosRiesgoPage({ params }) {
 
       // 5. Construir mensaje
       const tName = tenant ? (tenant.razon_social || tenant.nombre || 'Gestión SySO') : 'Gestión SySO';
-      const textMessage = `Estimado cliente de *${empName}* (Establecimiento: *${estName}*),\n\nLe adjuntamos el *Aviso de Riesgo* N° *${mailTargetAviso.aviso_numero || 'N/A'}* del día *${formatDate(mailTargetAviso.fecha)}* generado por el profesional *${mailTargetAviso.profesional_nombre}* de *${tName}*.\n\nPuede ver y descargar el documento PDF ingresando al siguiente enlace seguro:\n${pdfUrl}`;
+      const customNote = typeof customMsg === 'string' && customMsg.trim() ? `\n\n*Nota / Mensaje:* ${customMsg.trim()}` : '';
+      const textMessage = `Estimado cliente de *${empName}* (Establecimiento: *${estName}*),\n\nLe adjuntamos el *Aviso de Riesgo* N° *${mailTargetAviso.aviso_numero || 'N/A'}* del día *${formatDate(mailTargetAviso.fecha)}* generado por el profesional *${mailTargetAviso.profesional_nombre}* de *${tName}*.${customNote}\n\nPuede ver y descargar el documento PDF ingresando al siguiente enlace seguro:\n${pdfUrl}`;
       
       const encodedMsg = encodeURIComponent(textMessage);
       
@@ -1993,7 +1992,6 @@ export default function AvisosRiesgoPage({ params }) {
 
   // ----------------------------------------------------
   // Filtrado y Ordenamiento de Avisos
-  // ----------------------------------------------------
   const filteredAvisos = avisos.filter(a => {
     const emp = empresas.find(e => e.id === a.empresa_id);
     const est = allEstablecimientos.find(e => e.id === a.establecimiento_id);
@@ -2732,6 +2730,7 @@ export default function AvisosRiesgoPage({ params }) {
           onClose={() => setIsMailModalOpen(false)}
           title="Enviar Aviso de Riesgo (PDF)"
           subtitle={mailTargetAviso ? `${empresas.find(e => e.id === mailTargetAviso.empresa_id)?.razon_social || 'Cliente'} — ${formatDate(mailTargetAviso.fecha)}` : undefined}
+          aiContext="Envío de Aviso de Riesgo y Condiciones Peligrosas de Higiene y Seguridad"
           availableEmails={availableEmails}
           setAvailableEmails={setAvailableEmails}
           manualEmail={manualEmail}

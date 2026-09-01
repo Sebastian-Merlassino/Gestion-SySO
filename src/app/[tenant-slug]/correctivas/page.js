@@ -185,7 +185,7 @@ export default function AccionesCorrectivasPage({ params }) {
   // Estados estructurales
   const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
-  const [adminContact, setAdminContact] = useState({ email: 'info@gestionsyso.com', phone: '1159969956 / 1132296691' });
+  const [adminContact, setAdminContact] = useState({ email: 'contacto@gestionsyso.com', phone: '' });
   const [empresas, setEmpresas] = useState([]);
   const [allEstablecimientos, setAllEstablecimientos] = useState([]);
   const [miembrosList, setMiembrosList] = useState([]);
@@ -472,8 +472,8 @@ export default function AccionesCorrectivasPage({ params }) {
 
       if (adminProf) {
         setAdminContact({
-          email: adminProf.email || 'info@gestionsyso.com',
-          phone: adminProf.phone || '1159969956 / 1132296691'
+          email: adminProf.email || 'contacto@gestionsyso.com',
+          phone: adminProf.phone || ''
         });
       }
 
