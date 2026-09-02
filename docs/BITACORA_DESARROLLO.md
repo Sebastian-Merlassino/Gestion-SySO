@@ -1,3 +1,68 @@
+## [2026-09-02] Listado Integral de Correos del Cliente (Facturación y Generales) en Modal de Despacho
+
+### Resumen de Cambios
+- **Despacho de Facturación (`facturacion/page.js`):**
+  - Se optimizó la consulta de empresas clientes para incluir `nombre_comercial` junto a `razon_social`, `cuit`, `contactos_correos`, `contactos_telefonos` y `contactos_facturacion`.
+  - En `handleOpenSendModal`, se robusteció la búsqueda de la empresa vinculada a la factura por ID, CUIT normalizado, razón social y nombre comercial (con soporte para coincidencias parciales).
+  - Se implementó un helper de parseo seguro `parseContacts` que admite tanto arrays nativos como strings JSON.
+  - La ventana emergente de envío ahora lista de forma completa:
+    1. **Correos de Facturación:** identificados con prefijo `[Facturación]` y marcados con casillas de verificación seleccionadas por defecto (`checked: true`).
+    2. **Correos Generales del Cliente:** listados con nombre y cargo, listos para ser seleccionados por el usuario si desea enviar copias adicionales al resto del equipo directivo/operativo del cliente.
+    3. **Teléfonos de WhatsApp:** normalizados y listados para envío rápido.
+
+### Decisiones Clave
+- Presentar todos los correos registrados del cliente en una única lista clara y categorizada para evitar tener que ingresarlos manualmente.
+- Marcar prioritariamente los de facturación y dejar los generales disponibles con checkboxes para selección inmediata.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/facturacion/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build`).
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Abrir la ventana modal de envío en Facturación sobre cualquier cliente con múltiples contactos para comprobar la selección de casillas.
+
+## [2026-09-02] Inclusión del Nombre del Servicio Facturado en Mensajes de Correo y WhatsApp
+
+### Resumen de Cambios
+- **Despacho de Facturas por Correo Electrónico (`/api/send-email` y `facturacion/page.js`):**
+  - Se extendió el endpoint `/api/send-email` para admitir el parámetro opcional `serviceName`.
+  - En la plantilla HTML del correo para facturación, el cuerpo principal ahora muestra dinámicamente el concepto o servicio facturado: *«Se adjunta el comprobante / factura correspondiente a: **[Nombre del Servicio]**.»* (manteniendo el texto genérico como fallback en caso de no contar con descripción).
+- **Despacho de Facturas por WhatsApp (`facturacion/page.js`):**
+  - En la generación del mensaje predeterminado de WhatsApp, se extrae automáticamente la lista de ítems o descripción del servicio (`sendTargetFactura.items` / `sendTargetFactura.descripcion`) y se incorpora al texto: *«Hola, adjuntamos la Factura Electrónica ... correspondiente a *[Nombre del Servicio]* emitida por ...»*.
+
+### Decisiones Clave
+- Extraer automáticamente la descripción unificada de los ítems facturados (`items.map(i => i.descripcion).join(', ')`) o la descripción principal del comprobante.
+- Sanitizar `serviceName` con `escapeHtml` para resguardar la seguridad del correo frente a inyecciones HTML.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/api/send-email/route.js`
+- `[MODIFY] src/app/[tenant-slug]/facturacion/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build`).
+
+### Riesgos Detectados / Remanentes
+- Ninguno detectado.
+
+### Próximo Paso Recomendado
+- Probar el envío de una factura real o borrador hacia un correo de prueba y verificar la visualización en Gmail/Outlook y WhatsApp.
+
 ## [2026-08-31] Soporte para Comprobantes / Remitos Internos (X) No Fiscales en Facturación
 
 ### Resumen de Cambios

@@ -21,8 +21,9 @@ const sendEmailSchema = z.object({
   tenantLogoBase64: z.string().max(2 * 1024 * 1024, 'El logo excede el tamaño máximo permitido de 2 MB.').nullable().optional(),
   tenantName: z.string().max(200).optional(),
   tenantPrimaryColor: z.string().max(30).optional().nullable(),
-  documentType: z.string().max(100).optional(), // can be 'aviso_riesgo', 'capacitacion_online', etc.
+  documentType: z.string().max(300).optional(), // can be 'aviso_riesgo', 'capacitacion_online', etc.
   checklistName: z.string().max(200).optional(),
+  serviceName: z.string().max(1000).optional().nullable(),
   replyToEmail: z.string().email('Dirección de correo de respuesta inválida.').optional().nullable(),
   replyToName: z.string().max(200).optional().nullable()
 });
@@ -94,6 +95,7 @@ export async function POST(request) {
       tenantPrimaryColor,
       documentType, 
       checklistName,
+      serviceName,
       replyToEmail,
       replyToName
     } = parseResult.data;
@@ -129,6 +131,7 @@ export async function POST(request) {
     const inspectorNameEscaped = escapeHtml(inspectorName);
     const tenantNameEscaped = escapeHtml(effectiveTenantName);
     const checklistNameEscaped = escapeHtml(checklistName);
+    const serviceNameEscaped = escapeHtml(serviceName);
 
     // Determinar remitente de respuesta dinámico (Reply-To)
     const effectiveReplyToEmail = replyToEmail || user.email;
@@ -403,7 +406,9 @@ export async function POST(request) {
                       </p>
                       <p style="margin-top: 0; margin-bottom: ${formattedCustomMessage ? '16px' : '0'}; font-size: 15px; line-height: 1.7; color: #334155;">
                         ${isFactura 
-                          ? 'Se adjunta el comprobante / factura correspondiente a los servicios brindados.' 
+                          ? (serviceNameEscaped 
+                              ? `Se adjunta el comprobante / factura correspondiente a: <strong>${serviceNameEscaped}</strong>.` 
+                              : 'Se adjunta el comprobante / factura correspondiente a los servicios brindados.')
                           : isCapacitacionOnline
                           ? 'Se adjunta el registro de capacitación virtual correspondiente.'
                           : 'Se adjunta la documentación técnica correspondiente a sus instalaciones.'}

@@ -272,7 +272,7 @@ export default function FacturacionPage({ params }) {
       try {
         const { data, error } = await supabase
           .from('empresas')
-          .select('id, razon_social, cuit, contactos_correos, contactos_telefonos, contactos_facturacion')
+          .select('id, razon_social, nombre_comercial, cuit, contactos_correos, contactos_telefonos, contactos_facturacion')
           .eq('tenant_id', profile.tenant_id)
           .order('razon_social', { ascending: true });
         if (!error && data) setEmpresas(data);
@@ -541,65 +541,94 @@ export default function FacturacionPage({ params }) {
     setManualEmail('');
     setManualPhone('');
 
+    // Normalizar datos del receptor para búsqueda flexible
+    const rawFacturaDoc = String(factura.receptor_doc_nro || '').replace(/[^0-9]/g, '');
+    const rawFacturaRS = (factura.receptor_razon_social || '').trim().toLowerCase();
+
     // Buscar datos de contacto del cliente en la lista de empresas registradas
-    const foundEmpresa = empresas.find(e => 
-      e.id === factura.empresa_id || 
-      (factura.receptor_doc_nro && e.cuit && String(e.cuit).replace(/[^0-9]/g, '') === String(factura.receptor_doc_nro).replace(/[^0-9]/g, '')) ||
-      (factura.receptor_razon_social && e.razon_social && e.razon_social.trim().toLowerCase() === factura.receptor_razon_social.trim().toLowerCase())
-    );
+    const foundEmpresa = empresas.find(e => {
+      if (factura.empresa_id && e.id === factura.empresa_id) return true;
+      const cleanEmpCuit = String(e.cuit || '').replace(/[^0-9]/g, '');
+      if (rawFacturaDoc && cleanEmpCuit && cleanEmpCuit === rawFacturaDoc) return true;
+      const empRS = (e.razon_social || '').trim().toLowerCase();
+      const empNC = (e.nombre_comercial || '').trim().toLowerCase();
+      if (rawFacturaRS && (empRS === rawFacturaRS || empNC === rawFacturaRS)) return true;
+      if (rawFacturaRS && empRS && (empRS.includes(rawFacturaRS) || rawFacturaRS.includes(empRS))) return true;
+      if (rawFacturaRS && empNC && (empNC.includes(rawFacturaRS) || rawFacturaRS.includes(empNC))) return true;
+      return false;
+    });
 
     const emails = [];
     const phones = [];
 
     if (foundEmpresa) {
-      // 1. Correos de Facturación (prioridad para facturas)
-      if (Array.isArray(foundEmpresa.contactos_facturacion)) {
-        foundEmpresa.contactos_facturacion.forEach((c) => {
-          const mailStr = (typeof c === 'object') ? (c.valor || c.correo || c.email || '') : String(c || '');
-          const nameStr = (typeof c === 'object' && c.nombre) ? c.nombre : 'Facturación';
-          const cargoStr = (typeof c === 'object' && c.cargo) ? c.cargo : '';
-          if (mailStr && mailStr.includes('@')) {
-            emails.push({
-              valor: mailStr.trim(),
-              descripcion: `[Facturación] ${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr.trim()})`,
-              checked: emails.length === 0
-            });
-          }
-        });
-      }
+      // Helper robusto para parsear contactos (soporta Array nativo o JSON string)
+      const parseContacts = (raw) => {
+        if (!raw) return [];
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw === 'string') {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed;
+          } catch (e) {}
+        }
+        return [];
+      };
 
-      // 2. Correos Generales
-      if (Array.isArray(foundEmpresa.contactos_correos)) {
-        foundEmpresa.contactos_correos.forEach((c) => {
-          const mailStr = (typeof c === 'object') ? (c.valor || c.correo || c.email || '') : String(c || '');
-          const nameStr = (typeof c === 'object' && c.nombre) ? c.nombre : 'Contacto';
-          const cargoStr = (typeof c === 'object' && c.cargo) ? c.cargo : '';
-          if (mailStr && mailStr.includes('@') && !emails.some(e => e.valor.toLowerCase() === mailStr.trim().toLowerCase())) {
+      const facturacionList = parseContacts(foundEmpresa.contactos_facturacion);
+      const correosList = parseContacts(foundEmpresa.contactos_correos);
+      const telefonosList = parseContacts(foundEmpresa.contactos_telefonos);
+
+      // 1. Correos de Facturación (prioritarios y seleccionados por defecto)
+      facturacionList.forEach((c) => {
+        const mailStr = (typeof c === 'object') ? (c.valor || c.correo || c.email || '') : String(c || '');
+        const nameStr = (typeof c === 'object' && c.nombre) ? c.nombre : 'Facturación';
+        const cargoStr = (typeof c === 'object' && c.cargo) ? c.cargo : '';
+        const cleanMail = mailStr.trim();
+        if (cleanMail && cleanMail.includes('@')) {
+          const alreadyExists = emails.some(e => e.valor.toLowerCase() === cleanMail.toLowerCase());
+          if (!alreadyExists) {
             emails.push({
-              valor: mailStr.trim(),
-              descripcion: `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr.trim()})`,
-              checked: emails.length === 0
+              valor: cleanMail,
+              descripcion: `[Facturación] ${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${cleanMail})`,
+              checked: true
             });
           }
-        });
-      }
+        }
+      });
+
+      // 2. Correos Generales del Cliente (disponibles para selección)
+      correosList.forEach((c) => {
+        const mailStr = (typeof c === 'object') ? (c.valor || c.correo || c.email || '') : String(c || '');
+        const nameStr = (typeof c === 'object' && c.nombre) ? c.nombre : 'Contacto';
+        const cargoStr = (typeof c === 'object' && c.cargo) ? c.cargo : '';
+        const cleanMail = mailStr.trim();
+        if (cleanMail && cleanMail.includes('@')) {
+          const alreadyExists = emails.some(e => e.valor.toLowerCase() === cleanMail.toLowerCase());
+          if (!alreadyExists) {
+            emails.push({
+              valor: cleanMail,
+              descripcion: `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${cleanMail})`,
+              checked: emails.length === 0 // Marcado por defecto solo si no había correo específico de facturación
+            });
+          }
+        }
+      });
 
       // 3. Teléfonos (WhatsApp)
-      if (Array.isArray(foundEmpresa.contactos_telefonos)) {
-        foundEmpresa.contactos_telefonos.forEach((t) => {
-          const phoneStr = (typeof t === 'object') ? (t.valor || t.telefono || t.phone || '') : String(t || '');
-          const nameStr = (typeof t === 'object' && t.nombre) ? t.nombre : 'Contacto';
-          const cargoStr = (typeof t === 'object' && t.cargo) ? t.cargo : '';
-          const cleanPhone = phoneStr.replace(/[^0-9]/g, '');
-          if (cleanPhone && !phones.some(p => p.valor.replace(/[^0-9]/g, '') === cleanPhone)) {
-            phones.push({
-              valor: phoneStr.trim(),
-              descripcion: `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${phoneStr.trim()})`,
-              checked: phones.length === 0
-            });
-          }
-        });
-      }
+      telefonosList.forEach((t) => {
+        const phoneStr = (typeof t === 'object') ? (t.valor || t.telefono || t.phone || '') : String(t || '');
+        const nameStr = (typeof t === 'object' && t.nombre) ? t.nombre : 'Contacto';
+        const cargoStr = (typeof t === 'object' && t.cargo) ? t.cargo : '';
+        const cleanPhone = phoneStr.replace(/[^0-9]/g, '');
+        if (cleanPhone && !phones.some(p => p.valor.replace(/[^0-9]/g, '') === cleanPhone)) {
+          phones.push({
+            valor: phoneStr.trim(),
+            descripcion: `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${phoneStr.trim()})`,
+            checked: phones.length === 0
+          });
+        }
+      });
     }
 
     setAvailableEmails(emails);
@@ -662,6 +691,20 @@ export default function FacturacionPage({ params }) {
       const ptoVta = String(sendTargetFactura.punto_venta || config?.punto_venta || 1).padStart(5, '0');
       const compNro = sendTargetFactura.numero_comprobante ? String(sendTargetFactura.numero_comprobante).padStart(8, '0') : '-';
 
+      // Extraer concepto / nombre del servicio facturado
+      let serviceName = sendTargetFactura.descripcion || '';
+      if (!serviceName && sendTargetFactura.items) {
+        try {
+          const parsed = typeof sendTargetFactura.items === 'string' ? JSON.parse(sendTargetFactura.items) : sendTargetFactura.items;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const descs = parsed.map(i => i.descripcion?.trim()).filter(Boolean);
+            if (descs.length > 0) {
+              serviceName = descs.join(', ');
+            }
+          }
+        } catch (e) {}
+      }
+
       const res = await fetch('/api/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -676,6 +719,7 @@ export default function FacturacionPage({ params }) {
           tenantName: tenant?.name || config?.razon_social || 'Gestión SySO',
           tenantPrimaryColor: tenant?.primary_color || '#468DFF',
           documentType: `Factura Electrónica ${desc} (${letra}) ${ptoVta}-${compNro}`,
+          serviceName: serviceName || undefined,
         }),
       });
 
@@ -739,8 +783,23 @@ export default function FacturacionPage({ params }) {
       const ptoVta = String(sendTargetFactura.punto_venta || config?.punto_venta || 1).padStart(5, '0');
       const compNro = sendTargetFactura.numero_comprobante ? String(sendTargetFactura.numero_comprobante).padStart(8, '0') : '-';
 
+      // Extraer concepto / nombre del servicio facturado
+      let serviceName = sendTargetFactura.descripcion || '';
+      if (!serviceName && sendTargetFactura.items) {
+        try {
+          const parsed = typeof sendTargetFactura.items === 'string' ? JSON.parse(sendTargetFactura.items) : sendTargetFactura.items;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const descs = parsed.map(i => i.descripcion?.trim()).filter(Boolean);
+            if (descs.length > 0) {
+              serviceName = descs.join(', ');
+            }
+          }
+        } catch (e) {}
+      }
+
+      const serviceText = serviceName ? ` correspondiente a *${serviceName}*` : '';
       const customNote = typeof customMsg === 'string' && customMsg.trim() ? `\n\n*Nota / Mensaje:* ${customMsg.trim()}` : '';
-      const message = `Hola, adjuntamos la Factura Electrónica ${desc} (${letra}) N° ${ptoVta}-${compNro} emitida por ${config?.razon_social || tenant?.name || 'Gestión SySO'}.${customNote}\n\nPodés visualizar y descargar tu comprobante en el siguiente enlace:\n${downloadUrl}`;
+      const message = `Hola, adjuntamos la Factura Electrónica ${desc} (${letra}) N° ${ptoVta}-${compNro}${serviceText} emitida por ${config?.razon_social || tenant?.name || 'Gestión SySO'}.${customNote}\n\nPodés visualizar y descargar tu comprobante en el siguiente enlace:\n${downloadUrl}`;
 
       const cleanPhone = targetPhones[0].replace(/[^0-9]/g, '');
       const waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
