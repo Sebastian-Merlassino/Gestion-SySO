@@ -99,26 +99,55 @@ export default function FacturacionMasiva({
         const validRows = [];
         const errors = [];
 
+        const todayStr = new Date().toISOString().split('T')[0];
+
         rawData.forEach((row, idx) => {
           const filaNum = idx + 2; // header is row 1
-          const cbteTipoRaw = row['Tipo Comprobante (1=A, 6=B, 11=C)'] || row['Tipo Comprobante'] || row['tipo_comprobante'] || (config?.condicion_iva === 'monotributista' ? 11 : 6);
-          const conceptoRaw = row['Concepto (1=Prod, 2=Serv, 3=Ambos)'] || row['Concepto'] || 2;
-          const docTipoRaw = row['Doc Tipo (80=CUIT, 96=DNI, 99=CF)'] || row['Doc Tipo'] || 80;
-          const docNroRaw = String(row['Doc Numero (CUIT/DNI)'] || row['Doc Numero'] || row['cuit'] || '').replace(/[^0-9]/g, '');
-          const razonSocial = String(row['Razon Social / Cliente'] || row['Razon Social'] || row['razon_social'] || 'Cliente');
-          const precioUnit = parseFloat(row['Precio Unitario'] || row['precio_unitario'] || 0);
-          const cantidad = parseFloat(row['Cantidad'] || row['cantidad'] || 1);
-          const ivaPct = parseFloat(row['Alicuota IVA (21, 10.5, 0)'] || row['iva'] || (config?.condicion_iva === 'monotributista' ? 0 : 21));
+          
+          // Get values flexibly matching standard or trimmed keys
+          const getVal = (possibleKeys) => {
+            for (const k of possibleKeys) {
+              if (row[k] !== undefined && row[k] !== '') return row[k];
+            }
+            // case-insensitive fallback
+            for (const key of Object.keys(row)) {
+              for (const pk of possibleKeys) {
+                if (key.toLowerCase().trim().includes(pk.toLowerCase().trim())) {
+                  if (row[key] !== undefined && row[key] !== '') return row[key];
+                }
+              }
+            }
+            return '';
+          };
+
+          const cbteTipoRaw = getVal(['Tipo Comprobante (1=A, 6=B, 11=C)', 'Tipo Comprobante', 'tipo_comprobante']) || (config?.condicion_iva === 'monotributista' ? 11 : 6);
+          const conceptoRaw = getVal(['Concepto (1=Prod, 2=Serv, 3=Ambos)', 'Concepto', 'concepto']) || 2;
+          const docTipoRaw = getVal(['Doc Tipo (80=CUIT, 96=DNI, 99=CF)', 'Doc Tipo', 'doc_tipo']) || 80;
+          
+          let docNroRaw = getVal(['Doc Numero (CUIT/DNI)', 'Doc Numero', 'Doc Número', 'cuit', 'documento']);
+          if (typeof docNroRaw === 'number') {
+            docNroRaw = String(Math.floor(docNroRaw));
+          } else {
+            docNroRaw = String(docNroRaw || '').replace(/[^0-9]/g, '');
+          }
+
+          const razonSocial = String(getVal(['Razon Social / Cliente', 'Razón Social / Cliente', 'Razon Social', 'Razón Social', 'Cliente']) || 'Cliente');
+          const precioUnit = parseFloat(getVal(['Precio Unitario', 'precio_unitario', 'Precio', 'Importe', 'Total']) || 0);
+          const cantidad = parseFloat(getVal(['Cantidad', 'cantidad']) || 1);
+          const ivaPct = parseFloat(getVal(['Alicuota IVA (21, 10.5, 0)', 'Alícuota IVA', 'Alicuota IVA', 'IVA', 'iva']) || (config?.condicion_iva === 'monotributista' ? 0 : 21));
+
+          const itemDesc = String(getVal(['Descripcion Item', 'Descripción Item', 'Descripcion', 'Descripción', 'Concepto Detalle']) || 'Servicio Profesional SySO');
+          const domicilio = String(getVal(['Domicilio', 'Direccion', 'Dirección', 'domicilio']) || '');
 
           if (!docNroRaw && parseInt(docTipoRaw) !== 99) {
             errors.push(`Fila ${filaNum}: Falta número de CUIT o Documento.`);
           }
           if (precioUnit <= 0) {
-            errors.push(`Fila ${filaNum}: El precio unitario debe ser mayor a 0.`);
+            errors.push(`Fila ${filaNum}: El precio unitario debe ser mayor a $0.`);
           }
 
           const subtotal = cantidad * precioUnit;
-          const isMono = config?.condicion_iva === 'monotributista' || parseInt(cbteTipoRaw) === 11;
+          const isMono = config?.condicion_iva === 'monotributista' || parseInt(cbteTipoRaw) === 11 || parseInt(cbteTipoRaw) === 99;
           const ivaAmt = isMono ? 0 : subtotal * (ivaPct / 100);
           const total = subtotal + ivaAmt;
 
@@ -130,32 +159,36 @@ export default function FacturacionMasiva({
             detalleIva = [{ Id: ivaId, BaseImp: Number(subtotal.toFixed(2)), Importe: Number(ivaAmt.toFixed(2)) }];
           }
 
+          const fDesde = getVal(['Fecha Serv Desde (YYYY-MM-DD)', 'Fecha Serv Desde', 'Desde']) || todayStr;
+          const fHasta = getVal(['Fecha Serv Hasta (YYYY-MM-DD)', 'Fecha Serv Hasta', 'Hasta']) || todayStr;
+          const fVto = getVal(['Fecha Vto Pago (YYYY-MM-DD)', 'Fecha Vto Pago', 'Vencimiento']) || todayStr;
+
           validRows.push({
             fila_origen: filaNum,
-            tipo_comprobante: parseInt(cbteTipoRaw) || 11,
+            tipo_comprobante: parseInt(cbteTipoRaw) || (config?.condicion_iva === 'monotributista' ? 11 : 6),
             concepto: parseInt(conceptoRaw) || 2,
             receptor_doc_tipo: parseInt(docTipoRaw) || 80,
             receptor_doc_nro: parseInt(docNroRaw) || 0,
             receptor_razon_social: razonSocial,
-            receptor_condicion_iva: row['Condicion IVA'] || 'Responsable Inscripto',
-            receptor_domicilio: row['Domicilio'] || null,
-            descripcion: row['Descripcion Item'] || 'Servicio Profesional SySO',
+            receptor_condicion_iva: getVal(['Condicion IVA', 'Condición IVA', 'Condicion']) || 'Responsable Inscripto',
+            receptor_domicilio: domicilio || null,
+            descripcion: itemDesc,
             imp_neto: Number(subtotal.toFixed(2)),
             imp_iva: Number(ivaAmt.toFixed(2)),
             imp_total: Number(total.toFixed(2)),
             detalle_iva: detalleIva,
             items: [
               {
-                descripcion: row['Descripcion Item'] || 'Servicio Profesional SySO',
+                descripcion: itemDesc,
                 cantidad,
                 precio_unitario: precioUnit,
                 subtotal: Number(subtotal.toFixed(2)),
                 iva_porcentaje: ivaPct,
               }
             ],
-            fecha_serv_desde: row['Fecha Serv Desde (YYYY-MM-DD)'] || null,
-            fecha_serv_hasta: row['Fecha Serv Hasta (YYYY-MM-DD)'] || null,
-            fecha_vto_pago: row['Fecha Vto Pago (YYYY-MM-DD)'] || null,
+            fecha_serv_desde: fDesde,
+            fecha_serv_hasta: fHasta,
+            fecha_vto_pago: fVto,
           });
         });
 
