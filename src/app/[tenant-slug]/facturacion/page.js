@@ -1183,7 +1183,7 @@ export default function FacturacionPage({ params }) {
                         onClick={() => setCurrentView('masiva')}
                         className="px-3 py-1 text-xs font-bold rounded-md transition-all cursor-pointer border-none bg-white text-[#468DFF] shadow-xs"
                       >
-                        Masiva Excel
+                        Carga Masiva
                       </button>
                       <button
                         type="button"
@@ -1247,7 +1247,7 @@ export default function FacturacionPage({ params }) {
                         onClick={() => setCurrentView('masiva')}
                         className="px-3 py-1 text-xs font-bold rounded-md transition-all cursor-pointer border-none bg-transparent text-slate-600 hover:text-slate-900"
                       >
-                        Masiva Excel
+                        Carga Masiva
                       </button>
                       <button
                         type="button"
@@ -1360,7 +1360,7 @@ export default function FacturacionPage({ params }) {
                         onClick={() => setCurrentView('masiva')}
                         className="px-3 py-1 text-xs font-bold rounded-md transition-all cursor-pointer border-none bg-transparent text-slate-600 hover:text-slate-900"
                       >
-                        Masiva Excel
+                        Carga Masiva
                       </button>
                       <button
                         type="button"
@@ -1434,7 +1434,7 @@ export default function FacturacionPage({ params }) {
                             : 'bg-transparent text-slate-500 hover:text-slate-700'
                         }`}
                       >
-                        Masiva Excel
+                        Carga Masiva
                       </button>
                       <button
                         type="button"

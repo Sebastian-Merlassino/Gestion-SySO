@@ -270,7 +270,7 @@ export const facturacionHelp = {
           number={9}
           title="Descargar la Plantilla Modelo Excel"
         >
-          Hacé clic en <strong>"Masiva Excel"</strong> y presioná <strong>"📥 Descargar Plantilla Excel"</strong>. 
+          Hacé clic en <strong>"Carga Masiva"</strong> y presioná <strong>"📥 Descargar Plantilla Excel"</strong>. 
           <br /><span className="text-slate-500 text-[11px]">La plantilla viene optimizada y sin columnas innecesarias: la columna de domicilio ya no se requiere, ya que ARCA no la solicita para la autorización electrónica vía Web Services.</span>
         </HelpStep>
 

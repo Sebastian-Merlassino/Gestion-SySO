@@ -20,7 +20,8 @@
 - **Instructivo de la Sección (`src/content/help/articles/facturacion.js`):**
   - Actualizado el Paso 10 con una tarjeta destacada de *Aclaraciones y Reglas Clave* (domicilio no requerido, jurisdicción opcional y auto-detección, formatos universales de fecha, alícuotas de IVA y formateo de CUIT).
   - Sumada una FAQ técnica detallando el funcionamiento de la Jurisdicción en el seguimiento contable y de IIBB.
-- **Limpieza de Interfaz (`FacturacionMasiva.js`):**
+- **Limpieza y Consistencia de Interfaz (`FacturacionMasiva.js`, `facturacion/page.js`):**
+  - Se actualizó el botón y pestaña "Masiva Excel" a **"Carga Masiva"** en todas las vistas del módulo de facturación y en el instructivo oficial.
   - Se eliminó la franja redundante de tips situada al pie de la zona de arrastre del archivo Excel, manteniendo la interfaz despejada y profesional acorde a los lineamientos de marca.
 
 ### Decisiones Clave
