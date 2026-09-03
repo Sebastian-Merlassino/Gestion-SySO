@@ -9,7 +9,7 @@ import { registrarAuditoria, extractRequestContext } from '@/lib/arca/arcaAudit'
 import { acquireLock, releaseLock, generateLockId } from '@/lib/arca/arcaLock';
 
 const bulkItemSchema = z.object({
-  tipo_comprobante: z.number().int().refine(v => [1, 2, 3, 6, 7, 8, 11, 12, 13].includes(v), {
+  tipo_comprobante: z.number().int().refine(v => [1, 2, 3, 6, 7, 8, 11, 12, 13, 99].includes(v), {
     message: 'Tipo de comprobante inválido.',
   }),
   concepto: z.number().int().min(1).max(3).default(2),
