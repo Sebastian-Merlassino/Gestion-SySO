@@ -287,6 +287,7 @@ export const facturacionHelp = {
             <li><code>Descripcion Item</code>: Detalle del servicio o estudio de SySO prestado.</li>
             <li><code>Cantidad</code>: Cantidad de unidades o abonos (por defecto 1).</li>
             <li><code>Precio Unitario</code>: Monto del servicio (debe ser mayor a $0).</li>
+            <li><code>Jurisdicción (opcional)</code>: Provincia donde se prestó el servicio (ej: <code>Buenos Aires</code>, <code>CABA</code>, <code>Córdoba</code>). Si la dejás vacía, el sistema la toma automáticamente del establecimiento del cliente registrado en Gestión SySO.</li>
             <li>
               <code>Alicuota IVA</code>:
               <br />• <strong>Monotributistas / Factura C:</strong> Colocar <strong><code>0</code></strong> (o dejar vacío), ya que por ley las facturas C no discriminan IVA.
@@ -353,6 +354,10 @@ export const facturacionHelp = {
 
         <HelpFaq question="¿Es necesario cargar el domicilio del cliente en el Excel de carga masiva?">
           No. La columna de domicilio fue removida de la plantilla porque ARCA no solicita ni valida la dirección postal en los Web Services de facturación electrónica. Con CUIT/DNI, Razón Social, Concepto e Importe es suficiente.
+        </HelpFaq>
+
+        <HelpFaq question="¿Cómo se determina la Jurisdicción en la pestaña Seguimiento?">
+          La Jurisdicción clasifica la facturación para control de Ingresos Brutos (IIBB) y estadísticas provinciales. En la plantilla de Excel podés completarla opcionalmente (ej: <code>Buenos Aires</code>, <code>CABA</code>, <code>Córdoba</code>). Si la dejás vacía, el sistema busca el CUIT en tu base de clientes y le asigna automáticamente la provincia de su establecimiento registrado. Además, en la pantalla de <strong>Seguimiento</strong> podés modificarla en cualquier momento con un solo clic sobre la celda.
         </HelpFaq>
 
         <HelpFaq question="¿En qué formato debo escribir las fechas en el Excel?">

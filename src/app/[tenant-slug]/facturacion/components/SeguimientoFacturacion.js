@@ -23,34 +23,7 @@ import * as XLSX from 'xlsx';
 import { getVoucherTypeDetails } from '../utils/facturaPdfGenerator';
 import AppButton from '@/components/ui/AppButton';
 import AppTooltip from '@/components/ui/AppTooltip';
-
-const JURISDICCIONES_ARGENTINA = [
-  'CABA',
-  'Buenos Aires',
-  'Córdoba',
-  'Santa Fe',
-  'Mendoza',
-  'Tucumán',
-  'Entre Ríos',
-  'Salta',
-  'Misiones',
-  'Chaco',
-  'Corrientes',
-  'Santiago del Estero',
-  'San Juan',
-  'Jujuy',
-  'Río Negro',
-  'Neuquén',
-  'Formosa',
-  'Chubut',
-  'San Luis',
-  'Catamarca',
-  'La Rioja',
-  'La Pampa',
-  'Santa Cruz',
-  'Tierra del Fuego',
-  'Otras / No especificada'
-];
+import { JURISDICCIONES_ARGENTINA, normalizeJurisdiction } from '@/lib/arca/arcaJurisdictions';
 
 const MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -81,24 +54,19 @@ function inferJurisdiction(factura) {
   } else if (typeof factura.observaciones_arca === 'string') {
     try { obs = JSON.parse(factura.observaciones_arca); } catch (e) {}
   }
-  if (obs.jurisdiccion) return obs.jurisdiccion;
+  if (obs.jurisdiccion) return normalizeJurisdiction(obs.jurisdiccion);
 
-  // 2. Check company relationship
-  if (factura.empresas?.provincia) return factura.empresas.provincia;
+  // 2. Check company relationship and registered establishments
+  if (factura.empresas?.establecimientos && Array.isArray(factura.empresas.establecimientos) && factura.empresas.establecimientos.length > 0) {
+    const prov = factura.empresas.establecimientos[0]?.provincia;
+    if (prov) return normalizeJurisdiction(prov);
+  }
+  if (factura.empresas?.provincia) return normalizeJurisdiction(factura.empresas.provincia);
 
   // 3. Deduce from domicilio
-  const dom = (factura.receptor_domicilio || '').toLowerCase();
-  if (dom.includes('caba') || dom.includes('capital federal') || dom.includes('buenos aires (caba)')) return 'CABA';
-  if (dom.includes('buenos aires') || dom.includes('pba') || dom.includes('la plata') || dom.includes('avellaneda') || dom.includes('vicente lopez') || dom.includes('san isidro')) return 'Buenos Aires';
-  if (dom.includes('córdoba') || dom.includes('cordoba')) return 'Córdoba';
-  if (dom.includes('santa fe') || dom.includes('rosario')) return 'Santa Fe';
-  if (dom.includes('mendoza')) return 'Mendoza';
-  if (dom.includes('tucuman') || dom.includes('tucumán')) return 'Tucumán';
-  if (dom.includes('neuquen') || dom.includes('neuquén')) return 'Neuquén';
-  if (dom.includes('rio negro') || dom.includes('río negro')) return 'Río Negro';
-  if (dom.includes('salta')) return 'Salta';
-  if (dom.includes('entre rios') || dom.includes('entre ríos')) return 'Entre Ríos';
-  if (dom.includes('chubut')) return 'Chubut';
+  if (factura.receptor_domicilio) {
+    return normalizeJurisdiction(factura.receptor_domicilio, 'CABA');
+  }
 
   return 'CABA'; // Default fallback común para consultoras
 }

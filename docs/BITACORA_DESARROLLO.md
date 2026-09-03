@@ -1,3 +1,53 @@
+## [2026-09-03] Asignación Inteligente de Jurisdicción en Carga Masiva y Seguimiento de Facturación
+
+### Resumen de Cambios
+- **Normalizador Oficial de Jurisdicciones (`src/lib/arca/arcaJurisdictions.js`):**
+  - Se creó el catálogo y normalizador `normalizeJurisdiction` con las 24 provincias/jurisdicciones oficiales argentinas de AFIP/ARCA, soportando alias y modismos comunes (`pba`, `caba`, `bsas`, `capital federal`, etc.).
+- **Plantilla y Parser de Carga Masiva (`FacturacionMasiva.js`):**
+  - Se incorporó la columna opcional `'Jurisdicción (opcional: CABA, Buenos Aires, etc.)'` en la plantilla Excel descargable.
+  - El parser interpreta múltiples variantes de cabecera y normaliza el valor ingresado.
+  - La tabla de previsualización ahora exhibe la columna "Jurisdicción" con insignia formal para valores explícitos o la etiqueta tenue `Auto (por CUIT)` si se dejó vacía.
+- **Motor de Emisión Masiva (`/api/facturacion/emitir-masivo/route.js`):**
+  - Se pre-cargan en memoria los clientes (`empresas`) y sus `establecimientos` para vincular automáticamente el `empresa_id` a cada factura.
+  - Se implementó la resolución jerárquica de 3 niveles:
+    1. Si se indicó la jurisdicción en el Excel, se normaliza y se toma directamente.
+    2. Si quedó vacía, se toma la provincia del primer establecimiento registrado de la empresa.
+    3. Si no existe en la base de datos de Gestión SySO, se asigna `'CABA'` como fallback.
+  - Se persiste en `facturas.observaciones_arca` como `{ estado_pago: 'pendiente', jurisdiccion: finalJurisdiccion }`.
+- **Panel de Seguimiento y Modales (`SeguimientoFacturacion.js`, `FacturaDetalleModal.js`, `facturacion/page.js`):**
+  - La consulta `loadFacturas` ahora incluye `establecimientos(provincia)` en el join con empresas.
+  - `inferJurisdiction` aprovecha el nuevo utilitario y los datos de establecimientos para facturas existentes.
+- **Instructivo de la Sección (`src/content/help/articles/facturacion.js`):**
+  - Actualizado el Paso 10 y sumada una FAQ técnica detallando el funcionamiento de la Jurisdicción en el seguimiento contable y de IIBB.
+
+### Decisiones Clave
+- Mantener la columna como opcional en el Excel para no recargar a los usuarios que facturan servicios locales habituales, permitiendo al mismo tiempo precisión quirúrgica para empresas con múltiples plantas en distintas provincias.
+- Centralizar la lista de las 24 provincias argentinas en `src/lib/arca/arcaJurisdictions.js` para evitar duplicaciones en el código.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] src/lib/arca/arcaJurisdictions.js`
+- `[MODIFY] src/app/[tenant-slug]/facturacion/components/FacturacionMasiva.js`
+- `[MODIFY] src/app/[tenant-slug]/facturacion/components/SeguimientoFacturacion.js`
+- `[MODIFY] src/app/[tenant-slug]/facturacion/components/FacturaDetalleModal.js`
+- `[MODIFY] src/app/[tenant-slug]/facturacion/page.js`
+- `[MODIFY] src/app/api/facturacion/emitir-masivo/route.js`
+- `[MODIFY] src/content/help/articles/facturacion.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build` vía `cmd.exe /c "npm run build"`): exitosa con código 0 (36 páginas estáticas generadas).
+
+### Riesgos Detectados / Remanentes
+- Ninguno. Para facturas previas sin establecimiento registrado, el sistema mantiene fallback seguro a 'CABA' y permite ajuste en 1 clic.
+
+### Próximo Paso Recomendado
+- Descargar la nueva plantilla Excel desde la app y realizar una prueba de carga para observar la insignia de previsualización y el reflejo automático en la sección Seguimiento.
+
 ## [2026-09-02] Listado Integral de Correos del Cliente (Facturación y Generales) en Modal de Despacho
 
 ### Resumen de Cambios

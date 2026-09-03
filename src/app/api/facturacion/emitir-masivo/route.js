@@ -8,6 +8,7 @@ import { createArcaClient, isTransientError } from '@/lib/arca/arcaClient';
 import { registrarAuditoria, extractRequestContext } from '@/lib/arca/arcaAudit';
 import { acquireLock, releaseLock, generateLockId } from '@/lib/arca/arcaLock';
 import { formatDateToArcaInteger } from '@/lib/arca/arcaDates';
+import { normalizeJurisdiction } from '@/lib/arca/arcaJurisdictions';
 
 const bulkItemSchema = z.object({
   tipo_comprobante: z.number().int().refine(v => [1, 2, 3, 6, 7, 8, 11, 12, 13, 99].includes(v), {
@@ -19,6 +20,7 @@ const bulkItemSchema = z.object({
   receptor_razon_social: z.string().max(200).optional().nullable(),
   receptor_condicion_iva: z.string().max(50).optional().nullable(),
   receptor_domicilio: z.string().max(500).optional().nullable(),
+  jurisdiccion: z.string().max(100).optional().nullable(),
   imp_neto: z.number().min(0),
   imp_iva: z.number().min(0).default(0),
   imp_total: z.number().min(0),
@@ -65,8 +67,10 @@ function createAuthClient() {
 
 export async function POST(request) {
   let arcaCleanup = null;
+  let batchId = null;
 
   try {
+    // ── Authentication ──
     const serverClient = createAuthClient();
     const { data: { user }, error: authError } = await serverClient.auth.getUser();
     if (authError || !user) {
@@ -80,51 +84,58 @@ export async function POST(request) {
       .single();
 
     if (!profile?.tenant_id) {
-      return NextResponse.json({ error: 'No se encontró tenant asociado.' }, { status: 403 });
+      return NextResponse.json({ error: 'Tenant no encontrado.' }, { status: 403 });
     }
 
-    if (!['admin', 'miembro'].includes(profile.role)) {
-      return NextResponse.json({ error: 'No tiene permisos para emitir facturas.' }, { status: 403 });
+    const tenantId = profile.tenant_id;
+
+    // ── RBAC check ──
+    const isOwnerOrAdmin = ['owner', 'admin'].includes(profile.role);
+    if (!isOwnerOrAdmin) {
+      const { data: hasPerm } = await serverClient.rpc('user_has_action_permission', {
+        p_module: 'facturacion',
+        p_action: 'emitir',
+      });
+      if (!hasPerm) {
+        return NextResponse.json({ error: 'Sin permisos para emitir facturación masiva.' }, { status: 403 });
+      }
     }
 
+    // ── Body validation ──
     const body = await request.json();
     const parseResult = bulkPayloadSchema.safeParse(body);
     if (!parseResult.success) {
       return NextResponse.json({
-        error: 'Datos del lote inválidos.',
+        error: 'Payload de facturación masiva inválido.',
         details: parseResult.error.format(),
       }, { status: 400 });
     }
 
     const { nombre_archivo, facturas: items } = parseResult.data;
-    const { ip_address, user_agent } = extractRequestContext(request);
-    const tenantId = profile.tenant_id;
 
-    // Get ARCA config
+    // ── ARCA Config ──
     const { data: arcaConfig, error: configError } = await serverClient
-      .from('tenant_arca_config')
+      .from('arca_config')
       .select('*')
       .eq('tenant_id', tenantId)
       .single();
 
-    if (configError || !arcaConfig || !arcaConfig.is_active) {
+    if (configError || !arcaConfig || !arcaConfig.cuit || !arcaConfig.punto_venta) {
       return NextResponse.json({
-        error: 'No se encontró configuración activa de ARCA para este tenant.',
+        error: 'Configuración de ARCA incompleta. Configure CUIT y Punto de Venta.',
       }, { status: 400 });
     }
 
-    // 1. Create Batch record
+    const { ip_address, user_agent } = extractRequestContext(request);
+
+    // 1. Create batch header record
     const { data: batch, error: batchError } = await serverClient
       .from('facturas_batch')
       .insert({
         tenant_id: tenantId,
         nombre: nombre_archivo,
         total_facturas: items.length,
-        facturas_exitosas: 0,
-        facturas_fallidas: 0,
-        facturas_pendientes: 0,
         estado: 'procesando',
-        excel_data_backup: items,
         created_by: user.id,
       })
       .select()
@@ -136,38 +147,76 @@ export async function POST(request) {
       }, { status: 500 });
     }
 
-    const batchId = batch.id;
+    batchId = batch.id;
     const today = new Date().toISOString().split('T')[0];
 
+    // Pre-cargar empresas y establecimientos del tenant para vincular CUITs y resolver jurisdicción
+    const { data: tenantEmpresas } = await serverClient
+      .from('empresas')
+      .select('id, cuit, razon_social, establecimientos(id, denominacion, provincia)')
+      .eq('tenant_id', tenantId);
+
+    const cuitToEmpresaMap = new Map();
+    if (tenantEmpresas && Array.isArray(tenantEmpresas)) {
+      tenantEmpresas.forEach(emp => {
+        if (emp.cuit) {
+          const clean = String(emp.cuit).replace(/[^0-9]/g, '');
+          if (clean) cuitToEmpresaMap.set(clean, emp);
+        }
+      });
+    }
+
     // 2. Insert all items as drafts first
-    const draftRecords = items.map((item) => ({
-      tenant_id: tenantId,
-      batch_id: batchId,
-      estado: 'borrador',
-      tipo_comprobante: item.tipo_comprobante,
-      punto_venta: arcaConfig.punto_venta,
-      fecha_emision: today,
-      concepto: item.concepto,
-      fecha_serv_desde: item.fecha_serv_desde || null,
-      fecha_serv_hasta: item.fecha_serv_hasta || null,
-      fecha_vto_pago: item.fecha_vto_pago || null,
-      receptor_doc_tipo: item.receptor_doc_tipo,
-      receptor_doc_nro: item.receptor_doc_nro,
-      receptor_razon_social: item.receptor_razon_social || null,
-      receptor_condicion_iva: item.receptor_condicion_iva || null,
-      receptor_domicilio: item.receptor_domicilio || null,
-      imp_neto: item.imp_neto,
-      imp_iva: item.imp_iva,
-      imp_total: item.imp_total,
-      imp_tot_conc: item.imp_tot_conc || 0,
-      imp_op_ex: item.imp_op_ex || 0,
-      imp_trib: item.imp_trib || 0,
-      detalle_iva: item.detalle_iva || null,
-      descripcion: item.descripcion || null,
-      items: item.items || null,
-      empresa_id: item.empresa_id || null,
-      created_by: user.id,
-    }));
+    const draftRecords = items.map((item) => {
+      const cleanDocNro = String(item.receptor_doc_nro || '').replace(/[^0-9]/g, '');
+      const matchedEmpresa = cuitToEmpresaMap.get(cleanDocNro) || null;
+      const empresaId = item.empresa_id || matchedEmpresa?.id || null;
+
+      // Resolver jurisdicción:
+      // 1. Si viene en el Excel: normalizar
+      // 2. Si no, tomar la provincia del primer establecimiento registrado
+      // 3. Fallback: 'CABA'
+      let finalJurisdiccion = 'CABA';
+      if (item.jurisdiccion && item.jurisdiccion.trim()) {
+        finalJurisdiccion = normalizeJurisdiction(item.jurisdiccion);
+      } else if (matchedEmpresa?.establecimientos && matchedEmpresa.establecimientos.length > 0) {
+        const estProv = matchedEmpresa.establecimientos[0]?.provincia;
+        finalJurisdiccion = normalizeJurisdiction(estProv);
+      }
+
+      return {
+        tenant_id: tenantId,
+        batch_id: batchId,
+        estado: 'borrador',
+        tipo_comprobante: item.tipo_comprobante,
+        punto_venta: arcaConfig.punto_venta,
+        fecha_emision: today,
+        concepto: item.concepto,
+        fecha_serv_desde: item.fecha_serv_desde || null,
+        fecha_serv_hasta: item.fecha_serv_hasta || null,
+        fecha_vto_pago: item.fecha_vto_pago || null,
+        receptor_doc_tipo: item.receptor_doc_tipo,
+        receptor_doc_nro: item.receptor_doc_nro,
+        receptor_razon_social: item.receptor_razon_social || matchedEmpresa?.razon_social || null,
+        receptor_condicion_iva: item.receptor_condicion_iva || null,
+        receptor_domicilio: item.receptor_domicilio || null,
+        imp_neto: item.imp_neto,
+        imp_iva: item.imp_iva,
+        imp_total: item.imp_total,
+        imp_tot_conc: item.imp_tot_conc || 0,
+        imp_op_ex: item.imp_op_ex || 0,
+        imp_trib: item.imp_trib || 0,
+        detalle_iva: item.detalle_iva || null,
+        descripcion: item.descripcion || null,
+        items: item.items || null,
+        empresa_id: empresaId,
+        observaciones_arca: JSON.stringify({
+          estado_pago: 'pendiente',
+          jurisdiccion: finalJurisdiccion,
+        }),
+        created_by: user.id,
+      };
+    });
 
     const { data: insertedDrafts, error: draftsError } = await serverClient
       .from('facturas')

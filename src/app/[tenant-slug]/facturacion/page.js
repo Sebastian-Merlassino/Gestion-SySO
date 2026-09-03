@@ -233,7 +233,7 @@ export default function FacturacionPage({ params }) {
     try {
       const { data, error } = await supabase
         .from('facturas')
-        .select('*, empresas(razon_social)')
+        .select('*, empresas(razon_social, establecimientos(provincia))')
         .order('created_at', { ascending: false })
         .limit(100);
 

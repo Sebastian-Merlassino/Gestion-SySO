@@ -26,34 +26,7 @@ import {
 import { getVoucherTypeDetails } from '../utils/facturaPdfGenerator';
 import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppLabel from '@/components/ui/AppLabel';
-
-const JURISDICCIONES_ARGENTINA = [
-  'CABA',
-  'Buenos Aires',
-  'Córdoba',
-  'Santa Fe',
-  'Mendoza',
-  'Tucumán',
-  'Entre Ríos',
-  'Salta',
-  'Misiones',
-  'Chaco',
-  'Corrientes',
-  'Santiago del Estero',
-  'San Juan',
-  'Jujuy',
-  'Río Negro',
-  'Neuquén',
-  'Formosa',
-  'Chubut',
-  'San Luis',
-  'Catamarca',
-  'La Rioja',
-  'La Pampa',
-  'Santa Cruz',
-  'Tierra del Fuego',
-  'Otras / No especificada'
-];
+import { JURISDICCIONES_ARGENTINA, normalizeJurisdiction } from '@/lib/arca/arcaJurisdictions';
 
 function formatDate(dateStr) {
   if (!dateStr) return '-';

@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { normalizeDateToYMD } from '@/lib/arca/arcaDates';
+import { normalizeJurisdiction } from '@/lib/arca/arcaJurisdictions';
 import {
   FileSpreadsheet,
   Download,
@@ -58,6 +59,7 @@ export default function FacturacionMasiva({
         'Cantidad': 1,
         'Precio Unitario': 150000,
         'Alicuota IVA (21, 10.5, 0)': isMonotributo ? 0 : 21,
+        'Jurisdicción (opcional: CABA, Buenos Aires, etc.)': 'Buenos Aires',
         'Fecha Serv Desde (YYYY-MM-DD)': new Date().toISOString().split('T')[0],
         'Fecha Serv Hasta (YYYY-MM-DD)': new Date().toISOString().split('T')[0],
         'Fecha Vto Pago (YYYY-MM-DD)': new Date().toISOString().split('T')[0],
@@ -73,6 +75,7 @@ export default function FacturacionMasiva({
         'Cantidad': 1,
         'Precio Unitario': 85000,
         'Alicuota IVA (21, 10.5, 0)': isMonotributo ? 0 : 21,
+        'Jurisdicción (opcional: CABA, Buenos Aires, etc.)': 'CABA',
         'Fecha Serv Desde (YYYY-MM-DD)': new Date().toISOString().split('T')[0],
         'Fecha Serv Hasta (YYYY-MM-DD)': new Date().toISOString().split('T')[0],
         'Fecha Vto Pago (YYYY-MM-DD)': new Date().toISOString().split('T')[0],
@@ -150,6 +153,13 @@ export default function FacturacionMasiva({
 
           const itemDesc = String(getVal(['Descripcion Item', 'Descripción Item', 'Descripcion', 'Descripción', 'Concepto Detalle']) || 'Servicio Profesional SySO');
           const domicilio = String(getVal(['Domicilio', 'Direccion', 'Dirección', 'domicilio']) || '');
+          const rawJurisdiccion = String(getVal([
+            'Jurisdicción (opcional: CABA, Buenos Aires, etc.)',
+            'Jurisdiccion (opcional: CABA, Buenos Aires, etc.)',
+            'Jurisdicción', 'Jurisdiccion', 'jurisdiccion', 'jurisdicción',
+            'Provincia', 'provincia',
+          ]) || '');
+          const jurisdiccionVal = rawJurisdiccion.trim() ? normalizeJurisdiction(rawJurisdiccion) : null;
 
           if (!docNroRaw && parseInt(docTipoRaw) !== 99) {
             errors.push(`Fila ${filaNum}: Falta número de CUIT o Documento.`);
@@ -192,6 +202,7 @@ export default function FacturacionMasiva({
             receptor_razon_social: razonSocial,
             receptor_condicion_iva: getVal(['Condicion IVA', 'Condición IVA', 'Condicion']) || 'Responsable Inscripto',
             receptor_domicilio: domicilio || null,
+            jurisdiccion: jurisdiccionVal,
             descripcion: itemDesc,
             imp_neto: Number(subtotal.toFixed(2)),
             imp_iva: Number(ivaAmt.toFixed(2)),
@@ -310,7 +321,7 @@ export default function FacturacionMasiva({
           <span className="font-bold text-[#468DFF] flex items-center gap-1">
             <Info className="h-3.5 w-3.5" /> Tips de la planilla:
           </span>
-          <span>• <strong>Domicilio:</strong> No requerido (removido).</span>
+          <span>• <strong>Jurisdicción:</strong> Opcional (ej: Buenos Aires, CABA, o en blanco para auto-detectar).</span>
           <span>• <strong>Fechas:</strong> Acepta DD/MM/AAAA o dejá vacío para mes actual.</span>
           <span>• <strong>Alícuota IVA:</strong> Colocá 0 para Factura C o Remito X (21 para Factura A/B).</span>
           <span>• <strong>CUIT:</strong> 11 dígitos numéricos.</span>
@@ -459,6 +470,7 @@ export default function FacturacionMasiva({
                   <th className="px-4 py-3">CUIT / Doc</th>
                   <th className="px-4 py-3">Cliente / Razón Social</th>
                   <th className="px-4 py-3">Descripción</th>
+                  <th className="px-4 py-3">Jurisdicción</th>
                   <th className="px-4 py-3">Período Serv.</th>
                   <th className="px-4 py-3 text-right">Neto ($)</th>
                   <th className="px-4 py-3 text-right">IVA ($)</th>
@@ -478,6 +490,17 @@ export default function FacturacionMasiva({
                     <td className="px-4 py-2.5 font-mono">{r.receptor_doc_nro}</td>
                     <td className="px-4 py-2.5 font-semibold text-slate-800 truncate max-w-[160px]">{r.receptor_razon_social}</td>
                     <td className="px-4 py-2.5 text-slate-500 truncate max-w-[180px]">{r.descripcion}</td>
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      {r.jurisdiccion ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          {r.jurisdiccion}
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500 italic" title="Se resolverá automáticamente por el CUIT en la cartera de clientes de Gestión SySO">
+                          Auto (por CUIT)
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-2.5 whitespace-nowrap">
                       <span className="text-[11px] font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
                         {r.fecha_serv_desde} al {r.fecha_serv_hasta}
