@@ -204,6 +204,7 @@ export const facturacionHelp = {
             <li><strong>Facturas:</strong> Factura C (Monotributo), Factura A o Factura B (Responsable Inscripto).</li>
             <li><strong>Notas de Crédito (para anular o bonificar):</strong> <code>Nota de Crédito C</code>, <code>Nota de Crédito A</code> o <code>Nota de Crédito B</code>.</li>
             <li><strong>Notas de Débito:</strong> <code>Nota de Débito C</code>, <code>A</code> o <code>B</code> para recargos o ajustes.</li>
+            <li><strong>Comprobante Interno / Remito (X) (código 99):</strong> Comprobante administrativo no fiscal (sin solicitud de CAE a ARCA). Permite registrar servicios prestados, presupuestos aprobados y hacer seguimiento de cobranzas con numeración propia (<code>INT-00000001</code>) sin impacto impositivo.</li>
           </ul>
         </HelpStep>
 
@@ -224,6 +225,7 @@ export const facturacionHelp = {
         >
           <ul className="list-disc pl-4 space-y-1 mt-1 text-slate-600">
             <li><strong>Emitir a ARCA:</strong> Se conecta de forma segura con los Web Services de ARCA, valida correlatividades y devuelve el <strong>CAE oficial</strong> en el momento.</li>
+            <li><strong>Registrar Comprobante Interno:</strong> Guarda el comprobante administrativo en el sistema para gestión y seguimiento de cobro.</li>
             <li><strong>Guardar Borrador:</strong> Guarda el comprobante de manera local para revisarlo antes de enviarlo formalmente a AFIP.</li>
           </ul>
         </HelpStep>
@@ -255,7 +257,7 @@ export const facturacionHelp = {
                 📄 Nota_Credito_C_00005-00000001.pdf
               </div>
               <div className="p-2 bg-white rounded border border-slate-200 text-slate-800">
-                📄 Factura_B_00005-00000003.pdf
+                📄 Comprobante_Interno_X_00000001.pdf
               </div>
             </div>
           </div>
@@ -268,30 +270,60 @@ export const facturacionHelp = {
           number={9}
           title="Descargar la Plantilla Modelo Excel"
         >
-          Hacé clic en <strong>"Masiva Excel"</strong> y presioná <strong>"📥 Descargar Plantilla Excel"</strong>. Esta planilla contiene las columnas ya formateadas según tu condición frente al IVA.
+          Hacé clic en <strong>"Masiva Excel"</strong> y presioná <strong>"📥 Descargar Plantilla Excel"</strong>. 
+          <br /><span className="text-slate-500 text-[11px]">La plantilla viene optimizada y sin columnas innecesarias: la columna de domicilio ya no se requiere, ya que ARCA no la solicita para la autorización electrónica vía Web Services.</span>
         </HelpStep>
 
         <HelpStep
           number={10}
-          title="Completar los Datos Mínimos Requeridos"
+          title="Completar los Datos de cada Comprobante"
         >
-          Llená una fila por cada cliente a facturar:
+          Llená una fila por cada comprobante o cliente a facturar:
           <ul className="list-disc pl-4 space-y-1 mt-1 text-slate-600 text-[11px]">
-            <li><code>Tipo Comprobante</code>: 11 para Factura C, 1 para Factura A, 6 para Factura B.</li>
-            <li><code>Doc Tipo</code>: 80 para CUIT, 96 para DNI, 99 para Consumidor Final.</li>
+            <li><code>Tipo Comprobante</code>: <strong>11</strong> para Factura C, <strong>1</strong> para Factura A, <strong>6</strong> para Factura B, o <strong>99</strong> para Comprobante Interno (X).</li>
+            <li><code>Doc Tipo</code>: <strong>80</strong> para CUIT, <strong>96</strong> para DNI, <strong>99</strong> para Consumidor Final.</li>
             <li><code>Doc Numero</code>: CUIT o DNI del cliente (ej: <code>30712345678</code>).</li>
-            <li><code>Razon Social / Cliente</code>: Nombre de la empresa o cliente.</li>
-            <li><code>Descripcion Item</code>: Detalle del servicio de SySO prestado.</li>
-            <li><code>Precio Unitario</code>: Monto total del servicio.</li>
-            <li><code>Fecha Serv Desde / Hasta</code> y <code>Fecha Vto Pago</code>: Formato <code>YYYY-MM-DD</code>.</li>
+            <li><code>Razon Social / Cliente</code>: Nombre o razón social de la empresa.</li>
+            <li><code>Descripcion Item</code>: Detalle del servicio o estudio de SySO prestado.</li>
+            <li><code>Cantidad</code>: Cantidad de unidades o abonos (por defecto 1).</li>
+            <li><code>Precio Unitario</code>: Monto del servicio (debe ser mayor a $0).</li>
+            <li>
+              <code>Alicuota IVA</code>:
+              <br />• <strong>Monotributistas / Factura C:</strong> Colocar <strong><code>0</code></strong> (o dejar vacío), ya que por ley las facturas C no discriminan IVA.
+              <br />• <strong>Comprobantes Internos (X):</strong> Colocar <strong><code>0</code></strong>.
+              <br />• <strong>Responsables Inscriptos (Facturas A y B):</strong> Colocar <strong><code>21</code></strong> o <strong><code>10.5</code></strong> según corresponda.
+            </li>
+            <li>
+              <code>Fecha Serv Desde / Hasta</code> y <code>Fecha Vto Pago</code>:
+              <br />• <strong>Formatos aceptados:</strong> Podés escribir en formato argentino <code>DD/MM/AAAA</code> (ej: <code>1/8/2026</code> o <code>31/08/2026</code>), año corto <code>D/M/AA</code> (ej: <code>1/8/26</code>), formato estándar <code>YYYY-MM-DD</code> o fechas nativas de Excel.
+              <br />• <strong>Si las dejás vacías:</strong> El sistema calcula automáticamente el mes en curso (primer día del mes como <em>Desde</em>, último día como <em>Hasta</em> y fecha de hoy como <em>Vencimiento</em>).
+            </li>
           </ul>
+
+          <div className="bg-blue-50/60 border border-blue-200 rounded-lg p-3 text-[11px] text-slate-700 mt-2 space-y-1">
+            <strong className="text-blue-900 block font-bold">💡 Consejo para números de CUIT en Excel:</strong>
+            <p>
+              Si al pegar números de CUIT Excel te los muestra con notación científica (ej: <code>3,0718E+10</code>), simplemente seleccioná la columna D en Excel, hacé clic derecho ➔ <strong>"Formato de celdas..."</strong> y elegí <strong>"Número" con 0 decimales</strong> (o <strong>"Texto"</strong>).
+            </p>
+          </div>
         </HelpStep>
 
         <HelpStep
           number={11}
-          title="Subir y Emitir en Lote Automático"
+          title="Previsualización y Detección Automática de Errores"
         >
-          Arrastrá el archivo Excel a la plataforma y presioná <strong>"Emitir Lote de Facturas"</strong>. El sistema procesará cada comprobante de forma secuencial en ARCA y te entregará el reporte final de CAEs obtenidos.
+          Al arrastrar tu archivo Excel, el sistema realiza dos controles de seguridad automáticos:
+          <ul className="list-disc pl-4 space-y-1 mt-1 text-slate-600 text-[11px]">
+            <li><strong>Alertas de Errores:</strong> Si alguna fila no tiene CUIT o tiene un precio menor a $0, se muestra un panel de alerta rojo indicando el número exacto de fila que necesita corrección, y el botón de emisión se bloquea preventivamente.</li>
+            <li><strong>Tabla de Previsualización:</strong> Verás en pantalla el resumen de cada fila: CUIT, Cliente, Descripción, <strong>Período de Servicio reconocido</strong>, Importe Neto, IVA y Total.</li>
+          </ul>
+        </HelpStep>
+
+        <HelpStep
+          number={12}
+          title="Modal de Confirmación y Emisión Segura"
+        >
+          Al presionar <strong>"Emitir Facturas"</strong>, se abre un cuadro modal que resume el total de comprobantes y el monto acumulado del lote. Al confirmar, el sistema se comunica de forma secuencial con ARCA, protegiendo correlatividades fiscales y entregando el resultado con CAE de cada factura.
         </HelpStep>
       </HelpSection>
 
@@ -315,6 +347,26 @@ export const facturacionHelp = {
 
       {/* FAQS */}
       <HelpSection title="Preguntas Frecuentes (FAQs)" id="faqs">
+        <HelpFaq question="¿Por qué la columna IVA lleva 0 en Factura C o Monotributo?">
+          Porque según la normativa tributaria de AFIP/ARCA, los monotributistas no son sujetos pasivos de IVA y sus comprobantes (Factura C) no discriminan débito fiscal. El sistema establece automáticamente IVA en $0,00 y el Total igual al Neto para evitar rechazos por inconsistencia en los servidores de ARCA.
+        </HelpFaq>
+
+        <HelpFaq question="¿Es necesario cargar el domicilio del cliente en el Excel de carga masiva?">
+          No. La columna de domicilio fue removida de la plantilla porque ARCA no solicita ni valida la dirección postal en los Web Services de facturación electrónica. Con CUIT/DNI, Razón Social, Concepto e Importe es suficiente.
+        </HelpFaq>
+
+        <HelpFaq question="¿En qué formato debo escribir las fechas en el Excel?">
+          Podés escribirlas en el formato que uses habitualmente: <code>DD/MM/AAAA</code> (ej: <code>1/8/2026</code> o <code>31/08/2026</code>), formato abreviado <code>D/M/AA</code> (ej: <code>1/8/26</code>), con espacios (ej: <code>2026 09 03</code>) o formato ISO (<code>YYYY-MM-DD</code>). El sistema las normaliza automáticamente al formato que exige ARCA. Si dejás las celdas vacías, el sistema asigna por defecto el período del mes en curso.
+        </HelpFaq>
+
+        <HelpFaq question="¿Qué es el Comprobante Interno (X) y cuándo usarlo?">
+          El Comprobante Interno (código 99, letra X) es un comprobante de control administrativo no fiscal. Se utiliza para documentar servicios técnicos realizados, presupuestos cerrados o entregas de EPP sin emitir una factura legal ante ARCA ni generar obligaciones fiscales. Cuenta con su propia numeración secuencial (<code>INT-00000001</code>) y permite gestionar el cobro en el panel de Seguimiento.
+        </HelpFaq>
+
+        <HelpFaq question="¿Qué sucede si un CUIT en el Excel tiene errores o el archivo está incompleto?">
+          El sistema no enviará nada a ARCA a ciegas. Si falta un CUIT o un precio es inválido, aparecerá un panel rojo indicando la fila exacta con error y el botón de emisión se deshabilitará hasta que se corrija el archivo.
+        </HelpFaq>
+
         <HelpFaq question="¿Cómo anulo una factura emitida por error?">
           Las facturas con CAE otorgado no se pueden borrar (por exigencia legal de AFIP). Para anularla, hacé clic en <strong>"+ Emitir Factura"</strong>, seleccioná en Tipo de Comprobante <strong>"Nota de Crédito C"</strong> (o A/B), ingresá el mismo cliente e importe a anular, y hacé clic en <em>"Emitir Factura a ARCA"</em>.
         </HelpFaq>
