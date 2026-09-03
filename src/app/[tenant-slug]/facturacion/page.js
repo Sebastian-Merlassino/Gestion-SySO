@@ -508,19 +508,22 @@ export default function FacturacionPage({ params }) {
       return;
     }
     try {
-      const { error } = await supabase
-        .from('facturas')
-        .delete()
-        .eq('id', facturaId);
+      const res = await fetch('/api/facturacion/eliminar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ factura_id: facturaId }),
+      });
+      const data = await res.json();
 
-      if (!error) {
-        globalToast.toast('Comprobante eliminado correctamente.', 'success');
+      if (res.ok && data.success) {
+        globalToast.toast(data.message || 'Comprobante eliminado correctamente.', 'success');
+        setFacturas(prev => prev.filter(f => f.id !== facturaId));
         loadFacturas();
       } else {
-        globalToast.toast('No se pudo eliminar el comprobante: ' + error.message, 'error');
+        globalToast.toast(data.error || 'No se pudo eliminar el comprobante.', 'error');
       }
     } catch (err) {
-      globalToast.toast(err.message, 'error');
+      globalToast.toast(`Error de red: ${err.message}`, 'error');
     }
   };
 
@@ -1884,11 +1887,21 @@ export default function FacturacionPage({ params }) {
                                     )}
 
                                     {/* Botón Eliminar Comprobante */}
-                                    <AppTooltip content="Eliminar comprobante">
+                                    <AppTooltip content={f.cae && f.tipo_comprobante !== 99 ? "Comprobante con CAE (Anular con Nota de Crédito)" : "Eliminar comprobante"}>
                                       <AppButton
                                         variant="delete-table"
                                         size="icon"
-                                        onClick={() => setDeleteConfirm({ show: true, facturaId: f.id, isAuthorized: f.estado === 'autorizada' })}
+                                        onClick={() => {
+                                          if (f.cae && f.tipo_comprobante !== 99) {
+                                            globalToast.toast('Los comprobantes con CAE de ARCA no se pueden borrar por normativa fiscal. Para anularlo, emití una Nota de Crédito desde "+ Emitir factura".', 'warning');
+                                            return;
+                                          }
+                                          setDeleteConfirm({
+                                            show: true,
+                                            facturaId: f.id,
+                                            isInterno: f.tipo_comprobante === 99,
+                                          });
+                                        }}
                                       >
                                         <Trash2 className="h-4.5 w-4.5" />
                                       </AppButton>
@@ -1913,11 +1926,11 @@ export default function FacturacionPage({ params }) {
       <AppConfirmDialog
         open={deleteConfirm.show}
         onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, show: open }))}
-        title={deleteConfirm.isAuthorized ? "¿Eliminar Comprobante Autorizado?" : "¿Eliminar Comprobante?"}
+        title={deleteConfirm.isInterno ? "¿Eliminar Comprobante Interno?" : "¿Eliminar Comprobante?"}
         description={
-          deleteConfirm.isAuthorized 
-            ? "Esta acción eliminará el registro de la factura del listado local de la plataforma. Recordá que ante ARCA la factura con CAE ya fue autorizada y permanece asentada fiscalmente." 
-            : "Esta acción eliminará este comprobante localmente. No afectará los registros de ARCA."
+          deleteConfirm.isInterno 
+            ? "Esta acción eliminará el comprobante interno y su registro del sistema de forma permanente. No afectará a ARCA ya que es un comprobante administrativo no fiscal." 
+            : "Esta acción eliminará este comprobante de la plataforma permanentemente."
         }
         type="destructive"
         confirmText="Eliminar"
@@ -1926,7 +1939,7 @@ export default function FacturacionPage({ params }) {
           if (deleteConfirm.facturaId) {
             handleDeleteFactura(deleteConfirm.facturaId);
           }
-          setDeleteConfirm({ show: false, facturaId: null, isAuthorized: false });
+          setDeleteConfirm({ show: false, facturaId: null, isInterno: false });
         }}
       />
 
@@ -1960,7 +1973,17 @@ export default function FacturacionPage({ params }) {
         onDescargarPdf={handleDescargarPdf}
         onPrintPdf={handlePrintPdf}
         onOpenSendModal={handleOpenSendModal}
-        onDeleteFactura={(id) => setDeleteConfirm({ show: true, facturaId: id, isAuthorized: selectedFacturaModal?.estado === 'autorizada' })}
+        onDeleteFactura={(id) => {
+          if (selectedFacturaModal?.cae && selectedFacturaModal?.tipo_comprobante !== 99) {
+            globalToast.toast('Los comprobantes con CAE de ARCA no se pueden borrar. Para anularlo emita una Nota de Crédito.', 'warning');
+            return;
+          }
+          setDeleteConfirm({
+            show: true,
+            facturaId: id,
+            isInterno: selectedFacturaModal?.tipo_comprobante === 99,
+          });
+        }}
         onReintentar={handleReintentar}
         onReconciliar={handleReconciliar}
         onUpdatePago={handleUpdatePago}

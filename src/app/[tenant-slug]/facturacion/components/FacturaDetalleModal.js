@@ -520,18 +520,20 @@ export default function FacturaDetalleModal({
             >
               Cerrar
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onDeleteFactura?.(factura.id);
-              }}
-              className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
-              title="Eliminar este comprobante"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              <span>Eliminar</span>
-            </button>
+            {(!factura.cae || factura.tipo_comprobante === 99) && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onDeleteFactura?.(factura.id);
+                }}
+                className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+                title={factura.tipo_comprobante === 99 ? "Eliminar comprobante interno" : "Eliminar borrador"}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Eliminar</span>
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
