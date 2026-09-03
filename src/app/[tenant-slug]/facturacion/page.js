@@ -1978,11 +1978,7 @@ export default function FacturacionPage({ params }) {
             globalToast.toast('Los comprobantes con CAE de ARCA no se pueden borrar. Para anularlo emita una Nota de Crédito.', 'warning');
             return;
           }
-          setDeleteConfirm({
-            show: true,
-            facturaId: id,
-            isInterno: selectedFacturaModal?.tipo_comprobante === 99,
-          });
+          handleDeleteFactura(id);
         }}
         onReintentar={handleReintentar}
         onReconciliar={handleReconciliar}

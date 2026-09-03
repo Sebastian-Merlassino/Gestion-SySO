@@ -288,18 +288,17 @@ export async function POST(request) {
 
           const nextNumber = (lastInt?.numero_comprobante || 0) + 1;
           await releaseLock(serverClient, facturaId, lockId, {
-            estado: 'emitida',
+            estado: 'autorizada',
             numero_comprobante: nextNumber,
             punto_venta: 0,
             resultado_arca: 'A',
-            observaciones_arca: 'Comprobante interno administrativo registrado para control y seguimiento.',
           });
 
           exitosas++;
           resultados.push({
             fila: filaNum,
             factura_id: facturaId,
-            estado: 'emitida',
+            estado: 'autorizada',
             tipo_comprobante: 99,
             numero_comprobante: nextNumber,
             punto_venta: 0,

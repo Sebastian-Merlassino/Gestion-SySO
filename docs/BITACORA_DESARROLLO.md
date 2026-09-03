@@ -20,6 +20,12 @@
 - **Instructivo de la Sección (`src/content/help/articles/facturacion.js`):**
   - Actualizado el Paso 10 con una tarjeta destacada de *Aclaraciones y Reglas Clave* (domicilio no requerido, jurisdicción opcional y auto-detección, formatos universales de fecha, alícuotas de IVA y formateo de CUIT).
   - Sumada una FAQ técnica detallando el funcionamiento de la Jurisdicción en el seguimiento contable y de IIBB.
+- **Soporte de Remitos / Comprobantes Internos (X / 99) en Carga Masiva:**
+  - Se actualizó el encabezado de la columna en la plantilla Excel a `Tipo Comprobante (1=A, 6=B, 11=C, 99=Remito/X)` y se incorporó una fila modelo de remito de entrega de EPP.
+  - El parser interpreta tanto el número `99` como las cadenas `X`, `Remito` o `Interno`.
+  - La tabla de previsualización y resultados destaca los remitos con la insignia ámbar `REM-X` / `INT-XXXXX (No Fiscal)`.
+  - En `/api/facturacion/emitir-masivo`, se ajustó la persistencia de comprobantes internos a `estado: 'autorizada'` para cumplir con el check constraint de Postgres y preservar las observaciones.
+  - En `facturacion/page.js`, se conectó directamente la acción `onDeleteFactura` a `handleDeleteFactura(id)` para permitir borrar borradores o comprobantes internos sin CAE.
 - **Limpieza y Consistencia de Interfaz (`FacturacionMasiva.js`, `facturacion/page.js`):**
   - Se actualizó el botón y pestaña "Masiva Excel" a **"Carga Masiva"** en todas las vistas del módulo de facturación y en el instructivo oficial.
   - Se eliminó la franja redundante de tips situada al pie de la zona de arrastre del archivo Excel, manteniendo la interfaz despejada y profesional acorde a los lineamientos de marca.

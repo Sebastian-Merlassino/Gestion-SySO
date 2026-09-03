@@ -48,7 +48,7 @@ export default function FacturacionMasiva({
 
     const templateData = [
       {
-        'Tipo Comprobante (1=A, 6=B, 11=C)': defaultCbte,
+        'Tipo Comprobante (1=A, 6=B, 11=C, 99=Remito/X)': defaultCbte,
         'Concepto (1=Prod, 2=Serv, 3=Ambos)': 2,
         'Doc Tipo (80=CUIT, 96=DNI, 99=CF)': 80,
         'Doc Numero (CUIT/DNI)': 30712345678,
@@ -64,7 +64,7 @@ export default function FacturacionMasiva({
         'Fecha Vto Pago (YYYY-MM-DD)': new Date().toISOString().split('T')[0],
       },
       {
-        'Tipo Comprobante (1=A, 6=B, 11=C)': defaultCbte,
+        'Tipo Comprobante (1=A, 6=B, 11=C, 99=Remito/X)': defaultCbte,
         'Concepto (1=Prod, 2=Serv, 3=Ambos)': 2,
         'Doc Tipo (80=CUIT, 96=DNI, 99=CF)': 80,
         'Doc Numero (CUIT/DNI)': 30654321987,
@@ -75,6 +75,22 @@ export default function FacturacionMasiva({
         'Precio Unitario': 85000,
         'Alicuota IVA (21, 10.5, 0)': isMonotributo ? 0 : 21,
         'Jurisdicción (opcional: CABA, Buenos Aires, etc.)': 'CABA',
+        'Fecha Serv Desde (YYYY-MM-DD)': new Date().toISOString().split('T')[0],
+        'Fecha Serv Hasta (YYYY-MM-DD)': new Date().toISOString().split('T')[0],
+        'Fecha Vto Pago (YYYY-MM-DD)': new Date().toISOString().split('T')[0],
+      },
+      {
+        'Tipo Comprobante (1=A, 6=B, 11=C, 99=Remito/X)': 99,
+        'Concepto (1=Prod, 2=Serv, 3=Ambos)': 2,
+        'Doc Tipo (80=CUIT, 96=DNI, 99=CF)': 80,
+        'Doc Numero (CUIT/DNI)': 30777888991,
+        'Razon Social / Cliente': 'Logística Integral Andina S.A.',
+        'Condicion IVA': 'Responsable Inscripto',
+        'Descripcion Item': 'Remito / Constancia Interna de Entrega de EPP (No va a ARCA)',
+        'Cantidad': 1,
+        'Precio Unitario': 45000,
+        'Alicuota IVA (21, 10.5, 0)': 0,
+        'Jurisdicción (opcional: CABA, Buenos Aires, etc.)': 'Mendoza',
         'Fecha Serv Desde (YYYY-MM-DD)': new Date().toISOString().split('T')[0],
         'Fecha Serv Hasta (YYYY-MM-DD)': new Date().toISOString().split('T')[0],
         'Fecha Vto Pago (YYYY-MM-DD)': new Date().toISOString().split('T')[0],
@@ -134,7 +150,29 @@ export default function FacturacionMasiva({
             return '';
           };
 
-          const cbteTipoRaw = getVal(['Tipo Comprobante (1=A, 6=B, 11=C)', 'Tipo Comprobante', 'tipo_comprobante']) || (config?.condicion_iva === 'monotributista' ? 11 : 6);
+          const cbteTipoRaw = getVal([
+            'Tipo Comprobante (1=A, 6=B, 11=C, 99=Remito/X)',
+            'Tipo Comprobante (1=A, 6=B, 11=C)',
+            'Tipo Comprobante',
+            'tipo_comprobante',
+            'Comprobante',
+          ]);
+
+          let parsedCbteTipo = config?.condicion_iva === 'monotributista' ? 11 : 6;
+          const cleanCbteStr = String(cbteTipoRaw || '').trim().toLowerCase();
+          if (['99', 'x', 'remito', 'remito x', 'remito-x', 'interno', 'r'].includes(cleanCbteStr)) {
+            parsedCbteTipo = 99;
+          } else if (['1', 'a', 'factura a'].includes(cleanCbteStr)) {
+            parsedCbteTipo = 1;
+          } else if (['6', 'b', 'factura b'].includes(cleanCbteStr)) {
+            parsedCbteTipo = 6;
+          } else if (['11', 'c', 'factura c'].includes(cleanCbteStr)) {
+            parsedCbteTipo = 11;
+          } else {
+            const num = parseInt(cleanCbteStr);
+            if (!isNaN(num)) parsedCbteTipo = num;
+          }
+
           const conceptoRaw = getVal(['Concepto (1=Prod, 2=Serv, 3=Ambos)', 'Concepto', 'concepto']) || 2;
           const docTipoRaw = getVal(['Doc Tipo (80=CUIT, 96=DNI, 99=CF)', 'Doc Tipo', 'doc_tipo']) || 80;
           
@@ -471,8 +509,12 @@ export default function FacturacionMasiva({
                   <tr key={i} className="hover:bg-slate-50/60 transition-colors">
                     <td className="px-4 py-2.5 font-bold text-slate-400">{r.fila_origen}</td>
                     <td className="px-4 py-2.5">
-                      <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-blue-50 text-[#468DFF]">
-                        {r.tipo_comprobante === 1 ? 'FA-A' : r.tipo_comprobante === 6 ? 'FA-B' : r.tipo_comprobante === 99 ? 'INT-X' : 'FA-C'}
+                      <span className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] ${
+                        r.tipo_comprobante === 99
+                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                          : 'bg-blue-50 text-[#468DFF]'
+                      }`}>
+                        {r.tipo_comprobante === 1 ? 'FA-A' : r.tipo_comprobante === 6 ? 'FA-B' : r.tipo_comprobante === 99 ? 'REM-X' : 'FA-C'}
                       </span>
                     </td>
                     <td className="px-4 py-2.5 font-mono">{r.receptor_doc_nro}</td>
@@ -504,8 +546,8 @@ export default function FacturacionMasiva({
                             CAE: {r.resultado.cae}
                           </span>
                         ) : r.resultado?.tipo_comprobante === 99 ? (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-50 text-[#468DFF] border border-blue-200">
-                            INT-{String(r.resultado.numero_comprobante || 1).padStart(8, '0')}
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            INT-{String(r.resultado.numero_comprobante || 1).padStart(8, '0')} (No Fiscal)
                           </span>
                         ) : r.error_arca ? (
                           <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200 block truncate max-w-[140px]" title={r.error_arca}>
