@@ -14,7 +14,6 @@ import {
   RefreshCw,
   Eye,
   Trash2,
-  Info,
   Check,
   X,
   Receipt,
@@ -314,17 +313,6 @@ export default function FacturacionMasiva({
               Archivos compatibles: .xlsx, .xls, .csv (hasta 500 comprobantes por lote)
             </span>
           </label>
-        </div>
-
-        {/* Quick Tips Strip */}
-        <div className="mt-4 p-3 bg-blue-50/50 border border-blue-100 rounded-xl flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-slate-600">
-          <span className="font-bold text-[#468DFF] flex items-center gap-1">
-            <Info className="h-3.5 w-3.5" /> Tips de la planilla:
-          </span>
-          <span>• <strong>Jurisdicción:</strong> Opcional (ej: Buenos Aires, CABA, o en blanco para auto-detectar).</span>
-          <span>• <strong>Fechas:</strong> Acepta DD/MM/AAAA o dejá vacío para mes actual.</span>
-          <span>• <strong>Alícuota IVA:</strong> Colocá 0 para Factura C o Remito X (21 para Factura A/B).</span>
-          <span>• <strong>CUIT:</strong> 11 dígitos numéricos.</span>
         </div>
 
         {/* Parse Errors Banner */}

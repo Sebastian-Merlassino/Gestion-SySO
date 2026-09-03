@@ -18,7 +18,10 @@
   - La consulta `loadFacturas` ahora incluye `establecimientos(provincia)` en el join con empresas.
   - `inferJurisdiction` aprovecha el nuevo utilitario y los datos de establecimientos para facturas existentes.
 - **Instructivo de la Sección (`src/content/help/articles/facturacion.js`):**
-  - Actualizado el Paso 10 y sumada una FAQ técnica detallando el funcionamiento de la Jurisdicción en el seguimiento contable y de IIBB.
+  - Actualizado el Paso 10 con una tarjeta destacada de *Aclaraciones y Reglas Clave* (domicilio no requerido, jurisdicción opcional y auto-detección, formatos universales de fecha, alícuotas de IVA y formateo de CUIT).
+  - Sumada una FAQ técnica detallando el funcionamiento de la Jurisdicción en el seguimiento contable y de IIBB.
+- **Limpieza de Interfaz (`FacturacionMasiva.js`):**
+  - Se eliminó la franja redundante de tips situada al pie de la zona de arrastre del archivo Excel, manteniendo la interfaz despejada y profesional acorde a los lineamientos de marca.
 
 ### Decisiones Clave
 - Mantener la columna como opcional en el Excel para no recargar a los usuarios que facturan servicios locales habituales, permitiendo al mismo tiempo precisión quirúrgica para empresas con múltiples plantas en distintas provincias.

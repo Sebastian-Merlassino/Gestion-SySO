@@ -301,11 +301,17 @@ export const facturacionHelp = {
             </li>
           </ul>
 
-          <div className="bg-blue-50/60 border border-blue-200 rounded-lg p-3 text-[11px] text-slate-700 mt-2 space-y-1">
-            <strong className="text-blue-900 block font-bold">💡 Consejo para números de CUIT en Excel:</strong>
-            <p>
-              Si al pegar números de CUIT Excel te los muestra con notación científica (ej: <code>3,0718E+10</code>), simplemente seleccioná la columna D en Excel, hacé clic derecho ➔ <strong>"Formato de celdas..."</strong> y elegí <strong>"Número" con 0 decimales</strong> (o <strong>"Texto"</strong>).
-            </p>
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-[11px] text-slate-700 mt-3 space-y-2">
+            <strong className="text-slate-900 block font-bold flex items-center gap-1.5">
+              📌 Aclaraciones y Reglas Clave de la Planilla:
+            </strong>
+            <ul className="space-y-1 text-slate-600 pl-1">
+              <li>• <strong>Domicilio del cliente:</strong> No es requerido ni figura en la plantilla (ARCA no lo solicita en la autorización por Web Services).</li>
+              <li>• <strong>Jurisdicción:</strong> Opcional. Podés ingresar la provincia del servicio (ej: <code>Buenos Aires</code>, <code>CABA</code>, <code>Córdoba</code>). Si la dejás vacía, se auto-detecta según el establecimiento del cliente en Gestión SySO.</li>
+              <li>• <strong>Fechas de Servicio y Vencimiento:</strong> Acepta formato argentino <code>DD/MM/AAAA</code>, <code>D/M/AA</code>, <code>YYYY-MM-DD</code> o celdas vacías (calcula automáticamente el mes en curso).</li>
+              <li>• <strong>Alícuota IVA:</strong> Colocar <code>0</code> para Monotributo (Factura C) o Comprobante Interno X; colocar <code>21</code> o <code>10.5</code> para Facturas A y B.</li>
+              <li>• <strong>CUIT / Documento:</strong> 11 dígitos numéricos. Si Excel lo convierte a notación científica (ej: <code>3,07E+10</code>), seleccioná la columna, hacé clic derecho ➔ <em>"Formato de celdas..."</em> y elegí <em>"Número" con 0 decimales</em> (o <em>"Texto"</em>).</li>
+            </ul>
           </div>
         </HelpStep>
 
