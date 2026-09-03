@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { createArcaClient, isTransientError } from '@/lib/arca/arcaClient';
 import { registrarAuditoria, extractRequestContext } from '@/lib/arca/arcaAudit';
 import { acquireLock, releaseLock, generateLockId } from '@/lib/arca/arcaLock';
+import { formatDateToArcaInteger } from '@/lib/arca/arcaDates';
 
 const emitirSchema = z.object({
   // Optional: if provided, we update an existing draft; otherwise we create a new one
@@ -493,15 +494,9 @@ export async function POST(request) {
 
     // Add service dates if concepto is 2 or 3
     if (input.concepto >= 2) {
-      if (input.fecha_serv_desde) {
-        voucherData.FchServDesde = parseInt(input.fecha_serv_desde.replace(/-/g, ''));
-      }
-      if (input.fecha_serv_hasta) {
-        voucherData.FchServHasta = parseInt(input.fecha_serv_hasta.replace(/-/g, ''));
-      }
-      if (input.fecha_vto_pago) {
-        voucherData.FchVtoPago = parseInt(input.fecha_vto_pago.replace(/-/g, ''));
-      }
+      voucherData.FchServDesde = formatDateToArcaInteger(input.fecha_serv_desde);
+      voucherData.FchServHasta = formatDateToArcaInteger(input.fecha_serv_hasta);
+      voucherData.FchVtoPago = formatDateToArcaInteger(input.fecha_vto_pago);
     }
 
     let arcaResponse;

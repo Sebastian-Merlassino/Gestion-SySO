@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { createArcaClient, isTransientError } from '@/lib/arca/arcaClient';
 import { registrarAuditoria, extractRequestContext } from '@/lib/arca/arcaAudit';
 import { acquireLock, releaseLock, generateLockId } from '@/lib/arca/arcaLock';
+import { formatDateToArcaInteger } from '@/lib/arca/arcaDates';
 
 const bulkItemSchema = z.object({
   tipo_comprobante: z.number().int().refine(v => [1, 2, 3, 6, 7, 8, 11, 12, 13, 99].includes(v), {
@@ -225,7 +226,41 @@ export async function POST(request) {
       }
 
       try {
-        // Query next voucher number immediately before sending
+        // Handling for internal vouchers (X - 99): No ARCA consultation needed
+        if (itemInput.tipo_comprobante === 99) {
+          const { data: lastInt } = await serverClient
+            .from('facturas')
+            .select('numero_comprobante')
+            .eq('tenant_id', tenantId)
+            .eq('tipo_comprobante', 99)
+            .order('numero_comprobante', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          const nextNumber = (lastInt?.numero_comprobante || 0) + 1;
+          await releaseLock(serverClient, facturaId, lockId, {
+            estado: 'emitida',
+            numero_comprobante: nextNumber,
+            punto_venta: 0,
+            resultado_arca: 'A',
+            observaciones_arca: 'Comprobante interno administrativo registrado para control y seguimiento.',
+          });
+
+          exitosas++;
+          resultados.push({
+            fila: filaNum,
+            factura_id: facturaId,
+            estado: 'emitida',
+            tipo_comprobante: 99,
+            numero_comprobante: nextNumber,
+            punto_venta: 0,
+            cae: null,
+            cae_vto: null,
+          });
+          continue;
+        }
+
+        // Query next voucher number immediately before sending to ARCA
         const lastVoucher = await afip.ElectronicBilling.getLastVoucher(
           arcaConfig.punto_venta,
           itemInput.tipo_comprobante
@@ -257,15 +292,9 @@ export async function POST(request) {
         }
 
         if (itemInput.concepto >= 2) {
-          if (itemInput.fecha_serv_desde) {
-            voucherData.FchServDesde = parseInt(itemInput.fecha_serv_desde.replace(/-/g, ''));
-          }
-          if (itemInput.fecha_serv_hasta) {
-            voucherData.FchServHasta = parseInt(itemInput.fecha_serv_hasta.replace(/-/g, ''));
-          }
-          if (itemInput.fecha_vto_pago) {
-            voucherData.FchVtoPago = parseInt(itemInput.fecha_vto_pago.replace(/-/g, ''));
-          }
+          voucherData.FchServDesde = formatDateToArcaInteger(itemInput.fecha_serv_desde);
+          voucherData.FchServHasta = formatDateToArcaInteger(itemInput.fecha_serv_hasta);
+          voucherData.FchVtoPago = formatDateToArcaInteger(itemInput.fecha_vto_pago);
         }
 
         let arcaResponse;

@@ -2,6 +2,7 @@
 'use strict';
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
+import { normalizeDateToYMD } from '@/lib/arca/arcaDates';
 import {
   FileSpreadsheet,
   Download,
@@ -157,9 +158,17 @@ export default function FacturacionMasiva({
             detalleIva = [{ Id: ivaId, BaseImp: Number(subtotal.toFixed(2)), Importe: Number(ivaAmt.toFixed(2)) }];
           }
 
-          const fDesde = getVal(['Fecha Serv Desde (YYYY-MM-DD)', 'Fecha Serv Desde', 'Desde']) || todayStr;
-          const fHasta = getVal(['Fecha Serv Hasta (YYYY-MM-DD)', 'Fecha Serv Hasta', 'Hasta']) || todayStr;
-          const fVto = getVal(['Fecha Vto Pago (YYYY-MM-DD)', 'Fecha Vto Pago', 'Vencimiento']) || todayStr;
+          const now = new Date();
+          const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+          const rawDesde = getVal(['Fecha Serv Desde (YYYY-MM-DD)', 'Fecha Serv Desde', 'Desde', 'Serv Desde']);
+          const rawHasta = getVal(['Fecha Serv Hasta (YYYY-MM-DD)', 'Fecha Serv Hasta', 'Hasta', 'Serv Hasta']);
+          const rawVto = getVal(['Fecha Vto Pago (YYYY-MM-DD)', 'Fecha Vto Pago', 'Vencimiento', 'Vto Pago', 'Vto']);
+
+          const fDesde = normalizeDateToYMD(rawDesde, firstDayOfMonth);
+          const fHasta = normalizeDateToYMD(rawHasta, lastDayOfMonth);
+          const fVto = normalizeDateToYMD(rawVto, now);
 
           validRows.push({
             fila_origen: filaNum,
@@ -318,6 +327,7 @@ export default function FacturacionMasiva({
                   <th className="px-4 py-3">CUIT / Doc</th>
                   <th className="px-4 py-3">Cliente / Razón Social</th>
                   <th className="px-4 py-3">Descripción</th>
+                  <th className="px-4 py-3">Período Serv.</th>
                   <th className="px-4 py-3 text-right">Neto ($)</th>
                   <th className="px-4 py-3 text-right">IVA ($)</th>
                   <th className="px-4 py-3 text-right">Total ($)</th>
@@ -329,12 +339,17 @@ export default function FacturacionMasiva({
                     <td className="px-4 py-2.5 font-bold text-slate-400">{r.fila_origen}</td>
                     <td className="px-4 py-2.5">
                       <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-blue-50 text-[#468DFF]">
-                        {r.tipo_comprobante === 1 ? 'FA-A' : r.tipo_comprobante === 6 ? 'FA-B' : 'FA-C'}
+                        {r.tipo_comprobante === 1 ? 'FA-A' : r.tipo_comprobante === 6 ? 'FA-B' : r.tipo_comprobante === 99 ? 'INT-X' : 'FA-C'}
                       </span>
                     </td>
                     <td className="px-4 py-2.5 font-mono">{r.receptor_doc_nro}</td>
-                    <td className="px-4 py-2.5 font-semibold text-slate-800 truncate max-w-xs">{r.receptor_razon_social}</td>
-                    <td className="px-4 py-2.5 text-slate-500 truncate max-w-xs">{r.descripcion}</td>
+                    <td className="px-4 py-2.5 font-semibold text-slate-800 truncate max-w-[160px]">{r.receptor_razon_social}</td>
+                    <td className="px-4 py-2.5 text-slate-500 truncate max-w-[180px]">{r.descripcion}</td>
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <span className="text-[11px] font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                        {r.fecha_serv_desde} al {r.fecha_serv_hasta}
+                      </span>
+                    </td>
                     <td className="px-4 py-2.5 text-right font-mono">${r.imp_neto.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>
                     <td className="px-4 py-2.5 text-right font-mono">${r.imp_iva.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>
                     <td className="px-4 py-2.5 text-right font-bold text-slate-900 font-mono">${r.imp_total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>
