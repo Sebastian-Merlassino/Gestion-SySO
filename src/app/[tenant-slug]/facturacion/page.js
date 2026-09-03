@@ -1205,6 +1205,7 @@ export default function FacturacionPage({ params }) {
                     config={config}
                     onEmitirLote={handleEmitirLote}
                     isProcessingBatch={isProcessingBatch}
+                    onNavigateToComprobantes={() => setCurrentView('table')}
                   />
                 </div>
               </div>

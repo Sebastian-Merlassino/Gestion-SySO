@@ -1,6 +1,6 @@
 // src/app/[tenant-slug]/facturacion/components/FacturacionMasiva.js
 'use strict';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { normalizeDateToYMD } from '@/lib/arca/arcaDates';
 import {
@@ -15,18 +15,31 @@ import {
   Trash2,
   Info,
   Check,
-  X
+  X,
+  Receipt,
 } from 'lucide-react';
 
 export default function FacturacionMasiva({
   config,
   onEmitirLote,
-  isProcessingBatch = false
+  isProcessingBatch = false,
+  onNavigateToComprobantes,
 }) {
   const [parsedRows, setParsedRows] = useState([]);
   const [fileName, setFileName] = useState('');
   const [parseErrors, setParseErrors] = useState([]);
   const [batchResult, setBatchResult] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleReset = () => {
+    setParsedRows([]);
+    setFileName('');
+    setParseErrors([]);
+    setBatchResult(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   // Generate and download Excel template
   const handleDownloadTemplate = () => {
@@ -223,6 +236,23 @@ export default function FacturacionMasiva({
     });
     if (result) {
       setBatchResult(result);
+      if (result.detalles && Array.isArray(result.detalles)) {
+        const detallesMap = new Map();
+        result.detalles.forEach(d => {
+          detallesMap.set(d.fila, d);
+        });
+        const erroresMap = new Map();
+        if (result.errores && Array.isArray(result.errores)) {
+          result.errores.forEach(e => {
+            erroresMap.set(e.fila, e);
+          });
+        }
+        setParsedRows(prev => prev.map(r => ({
+          ...r,
+          resultado: detallesMap.get(r.fila_origen) || null,
+          error_arca: erroresMap.get(r.fila_origen)?.error || null,
+        })));
+      }
     }
   };
 
@@ -257,6 +287,7 @@ export default function FacturacionMasiva({
         <div className="mt-5">
           <label className="relative border-2 border-dashed border-slate-300 hover:border-[#468DFF] bg-slate-50/50 hover:bg-blue-50/20 rounded-2xl p-6 sm:p-8 text-center transition-all flex flex-col items-center justify-center cursor-pointer group">
             <input
+              ref={fileInputRef}
               type="file"
               accept=".xlsx,.xls,.csv"
               onChange={handleFileUpload}
@@ -303,7 +334,68 @@ export default function FacturacionMasiva({
         )}
       </div>
 
-      {/* 2. Preview Table */}
+      {/* 2. Batch Result Summary Card (Métricas al tope) */}
+      {batchResult && (
+        <div className="bg-white border border-emerald-200 rounded-2xl p-5 sm:p-7 shadow-sm space-y-4 animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <div>
+                <h4 className="text-base font-bold text-slate-800">
+                  Resultado del Procesamiento del Lote
+                </h4>
+                <p className="text-xs text-slate-500">
+                  Archivo: <span className="font-mono font-semibold text-slate-700">{fileName}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {onNavigateToComprobantes && (
+                <button
+                  type="button"
+                  onClick={onNavigateToComprobantes}
+                  className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-[#468DFF]/20 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Receipt className="h-4 w-4" />
+                  Ver Comprobantes Emitidos
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleReset}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Cargar Otra Planilla
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-center">
+              <span className="text-xs text-slate-500 block font-medium">Total Procesadas</span>
+              <span className="text-xl font-extrabold text-slate-800">{batchResult.resumen?.total || 0}</span>
+            </div>
+            <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-center">
+              <span className="text-xs text-emerald-700 block font-bold">Autorizadas ✅</span>
+              <span className="text-xl font-extrabold text-emerald-700">{batchResult.resumen?.exitosas || 0}</span>
+            </div>
+            <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-center">
+              <span className="text-xs text-red-700 block font-bold">Rechazadas ❌</span>
+              <span className="text-xl font-extrabold text-red-700">{batchResult.resumen?.fallidas || 0}</span>
+            </div>
+            <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-center">
+              <span className="text-xs text-amber-700 block font-bold">Pendientes Red ⚠️</span>
+              <span className="text-xl font-extrabold text-amber-700">{batchResult.resumen?.pendientes || 0}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Preview Table */}
       {parsedRows.length > 0 && (
         <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-7 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
@@ -313,19 +405,48 @@ export default function FacturacionMasiva({
                 Vista Previa de Comprobantes ({parsedRows.length} filas detectadas)
               </h4>
               <span className="text-xs text-slate-500">
-                Verificá que los datos y montos correspondan antes de enviar a ARCA.
+                {batchResult
+                  ? 'El lote ya fue procesado en ARCA. Podés consultar el estado de cada fila.'
+                  : 'Verificá que los datos y montos correspondan antes de enviar a ARCA.'}
               </span>
             </div>
 
-            <button
-              type="button"
-              onClick={handleEmitir}
-              disabled={isProcessingBatch || parseErrors.length > 0}
-              className="px-6 py-2.5 bg-[#468DFF] text-white hover:bg-[#0511F2] rounded-xl text-xs font-bold transition-all shadow-md shadow-[#468DFF]/20 flex items-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              <Send className="h-4 w-4" />
-              {isProcessingBatch ? 'Procesando Lote en ARCA...' : `Emitir ${parsedRows.length} Facturas`}
-            </button>
+            {batchResult ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3.5 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Lote Ya Emitido ({batchResult.resumen?.exitosas || 0} facturas)
+                </span>
+                {onNavigateToComprobantes && (
+                  <button
+                    type="button"
+                    onClick={onNavigateToComprobantes}
+                    className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-[#468DFF]/20 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Receipt className="h-3.5 w-3.5" />
+                    Ir a Comprobantes
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Nueva Carga
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleEmitir}
+                disabled={isProcessingBatch || parseErrors.length > 0}
+                className="px-6 py-2.5 bg-[#468DFF] text-white hover:bg-[#0511F2] rounded-xl text-xs font-bold transition-all shadow-md shadow-[#468DFF]/20 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                <Send className="h-4 w-4" />
+                {isProcessingBatch ? 'Procesando Lote en ARCA...' : `Emitir ${parsedRows.length} Facturas`}
+              </button>
+            )}
           </div>
 
           {/* Table Container */}
@@ -342,6 +463,7 @@ export default function FacturacionMasiva({
                   <th className="px-4 py-3 text-right">Neto ($)</th>
                   <th className="px-4 py-3 text-right">IVA ($)</th>
                   <th className="px-4 py-3 text-right">Total ($)</th>
+                  {batchResult && <th className="px-4 py-3">Estado / CAE</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -364,41 +486,31 @@ export default function FacturacionMasiva({
                     <td className="px-4 py-2.5 text-right font-mono">${r.imp_neto.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>
                     <td className="px-4 py-2.5 text-right font-mono">${r.imp_iva.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>
                     <td className="px-4 py-2.5 text-right font-bold text-slate-900 font-mono">${r.imp_total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>
+                    {batchResult && (
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        {r.resultado?.cae ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            CAE: {r.resultado.cae}
+                          </span>
+                        ) : r.resultado?.tipo_comprobante === 99 ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-50 text-[#468DFF] border border-blue-200">
+                            INT-{String(r.resultado.numero_comprobante || 1).padStart(8, '0')}
+                          </span>
+                        ) : r.error_arca ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200 block truncate max-w-[140px]" title={r.error_arca}>
+                            {r.error_arca}
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500">
+                            -
+                          </span>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Batch Result Summary Card */}
-      {batchResult && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-7 shadow-sm space-y-4 animate-fade-in">
-          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-            <h4 className="text-base font-bold text-slate-800">
-              Resultado del Procesamiento del Lote
-            </h4>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-center">
-              <span className="text-xs text-slate-500 block">Total Procesadas</span>
-              <span className="text-xl font-extrabold text-slate-800">{batchResult.resumen?.total || 0}</span>
-            </div>
-            <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-center">
-              <span className="text-xs text-emerald-700 block font-semibold">Autorizadas ✅</span>
-              <span className="text-xl font-extrabold text-emerald-700">{batchResult.resumen?.exitosas || 0}</span>
-            </div>
-            <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-center">
-              <span className="text-xs text-red-700 block font-semibold">Rechazadas ❌</span>
-              <span className="text-xl font-extrabold text-red-700">{batchResult.resumen?.fallidas || 0}</span>
-            </div>
-            <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-center">
-              <span className="text-xs text-amber-700 block font-semibold">Pendientes Red ⚠️</span>
-              <span className="text-xl font-extrabold text-amber-700">{batchResult.resumen?.pendientes || 0}</span>
-            </div>
           </div>
         </div>
       )}
