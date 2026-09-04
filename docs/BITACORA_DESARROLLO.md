@@ -1,3 +1,43 @@
+## [2026-09-04] Reestructuración Integral de las Instrucciones In-App del Dashboard Principal
+
+### Resumen de Cambios
+- **Instructivo In-App del Dashboard (`src/content/help/articles/dashboard.js`):**
+  - Se analizó y reescribió integralmente el artículo de ayuda del Dashboard, transformándolo de una guía genérica de 81 líneas a una documentación exhaustiva de casi 500 líneas estructurada con componentes estándar de diseño (`HelpPurpose`, `HelpSection`, `HelpStep`, `HelpTip`, `HelpFaq`, `HelpBadge`).
+  - **Panel de Vencimientos:** Se documentó la ventana temporal bimestral de control (mes actual y mes siguiente), el semáforo preventivo de alertas (rojo para vencidos, amarillo para los próximos a vencer en 15 días, verde para vigentes) y el enlace directo hacia el Programa de Gestión Anual.
+  - **Calendario Interactivo:** Explicación de la navegación mensual, codificación cromática de los puntos indicadores (*Verde*: todo cumplido, *Ámbar*: pendiente vigente, *Rojo*: vencido), selección de día para consultar "Tareas del Día" y el flujo del botón **"+ Añadir Actividad"** que pre-carga automáticamente la fecha en el Programa de Gestión Anual vía URL (`?add-date=...`).
+  - **Tareas Pendientes y Asignación:** Detalle de pestañas (Pendientes vs. Terminadas), completado por checkbox, borrado definitivo, uso del asistente por voz y refinamiento por IA (`AITextHelper`), asignación a técnicos de equipo y la regla estricta de privacidad/visibilidad multi-usuario (cada miembro visualiza únicamente lo creado por él o asignado a él).
+  - **Estadísticas y Normativa SRT:** Explicación de la obligatoriedad de seleccionar una Razón Social (para administradores y técnicos) para evitar que los contadores muestren 0, datos indispensables en el sistema (**Nómina de Personal** cargada en el año analizado como denominador de expuestos y **Siniestros con días de baja** en el módulo de Accidentes).
+  - **Concepto y Utilidad de los 4 Índices Oficiales de la SRT:**
+    1. *Índice de Incidencia (AT y EP):* Tasa de frecuencia relativa cada 1.000 trabajadores cubiertos.
+    2. *Índice de Mortalidad (AT y EP):* Tasa de letalidad laboral cada 1.000.000 de trabajadores.
+    3. *Índice de Pérdida (IP):* Tasa de severidad y ausentismo acumulado por jornadas no trabajadas cada 1.000 trabajadores.
+    4. *Duración Media de las Bajas (DMB):* Promedio de días perdidos por cada siniestro que generó ausentismo laboral.
+  - **Descarga de Reporte PDF e Impresión:** Estructura del documento A4 Landscape de 4 páginas con branding corporativo (Logo 1 y colores del tenant), gráficos vectoriales escalables, tablas técnicas desglosadas por mes e impresión directa.
+  - **Preguntas Frecuentes (FAQs):** Incorporadas 5 respuestas técnicas para resolver dudas sobre valores en cero, privacidad de tareas, cálculo de nómina y acceso de clientes.
+
+### Decisiones Clave
+- Incorporar una explicación conceptual y metodológica profunda para cada uno de los 4 índices de la SRT, aclarando no sólo la fórmula matemática sino también qué mide y para qué sirve en la gestión de prevención.
+- Resaltar claramente la necesidad de seleccionar cliente y contar con nómina previa para despejar la duda recurrente de usuarios que ven los gráficos en cero al iniciar sesión como administradores.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `SySO-AI-Voice-Helper`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/content/help/articles/dashboard.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Validación sintáctica con `node -c src/content/help/articles/dashboard.js`: exitosa con código 0.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. El componente es puramente documental e interactivo dentro del drawer contextual y no altera estados de backend ni esquemas de base de datos.
+
+### Próximo Paso Recomendado
+- Abrir la aplicación, ingresar al Dashboard y presionar el botón `(?)` en la cabecera para verificar la visualización en el drawer de ayuda.
+
 ## [2026-09-03] Asignación Inteligente de Jurisdicción en Carga Masiva y Seguimiento de Facturación
 
 ### Resumen de Cambios
