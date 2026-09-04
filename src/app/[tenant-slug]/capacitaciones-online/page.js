@@ -1018,7 +1018,7 @@ export default function CapacitacionesOnlinePage({ params }) {
   };
 
   // Enviar Registro PDF por Email
-  const handleSendPdfEmail = async () => {
+  const handleSendPdfEmail = async (customMsg) => {
     if (!sendPdfTarget) return;
     const checked = availableEmails.filter(e => e.checked).map(e => e.valor);
     const manuals = manualEmail.split(',').map(e => e.trim()).filter(Boolean);

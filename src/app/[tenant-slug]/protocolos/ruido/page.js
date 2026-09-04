@@ -496,7 +496,7 @@ export default function ProtocolosRuidoPage({ params }) {
   };
 
   // Enviar por WhatsApp
-  const handleSendWhatsApp = async () => {
+  const handleSendWhatsApp = async (customMsg) => {
     setWhatsappLoading(true);
     try {
       const checkedPhones = availablePhones.filter(p => p.checked).map(p => p.valor);

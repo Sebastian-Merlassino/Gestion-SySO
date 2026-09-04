@@ -1,3 +1,104 @@
+## [2026-09-04] Corrección de ReferenceError AppLabel y Auditoría Integral de Identificadores JSX
+
+### Resumen de Cambios
+- **Corrección de importación de `AppLabel`:** Se corrigió el error `ReferenceError: AppLabel is not defined` que ocurría al desplegar los "FILTROS DE BÚSQUEDA" en la sección de Accidentes (`src/app/[tenant-slug]/accidentes/page.js`), importando el componente `<AppLabel />`.
+- **Auditoría preventiva en el resto de los módulos:** Se ejecutó un análisis estático exhaustivo con AST (`@babel/parser` y `@babel/traverse`) sobre la totalidad de los archivos `.js` y `.jsx` del proyecto `src/`, detectando y corrigiendo las mismas faltas de importación en:
+  - `src/app/[tenant-slug]/avisos/page.js`
+  - `src/app/[tenant-slug]/control-electrico/page.js`
+  - `src/app/[tenant-slug]/empresas/page.js`
+  - `src/app/[tenant-slug]/extintores/page.js`
+- **Exportación de `resizeImageForPdf` en `src/lib/pdf/pdfImages.js`:** Se incorporó y exportó la función de redimensionado de imágenes en base64 directamente en la biblioteca de imágenes de PDF para que todos los generadores y páginas (`avisos`, `checklist-personalizados`, etc.) dispongan de la misma sin errores de referencia ni dependencias circulares.
+- **Corrección de errores de referencia adicionales descubiertos en la auditoría:**
+  - `avisos/page.js`: Se corrigió el alcance de bloque de `pathParts` y `bucketIndex` en la resolución de firmas de Storage que provocaba fallos de referencia.
+  - `control-electrico/page.js`: Se agregó el parámetro `customMsg` en `handleSendWhatsApp`.
+  - `checklist-personalizados/page.js`: Se agregó el parámetro `customMsg` y se corrigió la propiedad `filePath` (reemplazando `filePath` inexistente por `relativePath`) en `handleSendEmail`.
+  - `capacitaciones-online/page.js`: Se agregó el parámetro `customMsg` en `handleSendPdfEmail`.
+  - `protocolos/puesta-a-tierra/components/ProtocoloForm.js`: Se corrigió el `onSubmit` del `<form>` reemplazando la llamada a la función no declarada `handleSave('finalizado')` por `handleSubmit`.
+  - `protocolos/puesta-a-tierra`, `iluminacion`, `ruido`, `ergonomia`: Se reubicó la función `getMatriculasForProfile` al alcance general de `loadData` / `loadLookups` para evitar que la auto-selección de perfiles falle con `ReferenceError`.
+  - `protocolos/ergonomia/components/ProtocoloForm.js`: Se removieron funciones residuales no utilizadas de Iluminación (`handleActividadSelect`, `handlePuntoGeometriaChange`) que hacían referencia a constantes no definidas, y se añadieron las funciones requeridas `dataURLtoBlob` y `bakeImageWithMarkers` para el horneado de planos con marcadores.
+  - `correctivas/page.js` y `extintores/page.js`: Se eliminó la función muerta residual `handleImagenChange` que referenciaba estados inexistentes.
+  - `protocolos/ergonomia/page.js`, `iluminacion/page.js`, `puesta-a-tierra/page.js`, `ruido/page.js`: Se agregó el parámetro `customMsg` a `handleSendWhatsApp`.
+
+### Decisiones Clave
+- Resolver la causa raíz no solo en el módulo de Accidentes, sino en todos los paneles de filtros y formularios del sistema mediante un script de análisis semántico AST para garantizar que ningún usuario vuelva a experimentar pantallas de "Ocurrió un error inesperado".
+- Centralizar `resizeImageForPdf` en `pdfImages.js` para estandarizar el procesamiento de imágenes de firma y logotipos institucionales antes del renderizado de PDFs.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] src/lib/pdf/pdfImages.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Escaneo AST completo de todos los componentes y expresiones JSX con `@babel/parser` y `@babel/traverse`: 0 identificadores no resueltos (`REMAINING_UNBOUND_COUNT: 0`).
+- Compilación completa de producción (`next build`): exitosa con código 0, generando todas las rutas dinámicas y estáticas del proyecto.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. Todos los componentes y manejadores fueron validados a nivel de AST y de compilador.
+
+### Próximo Paso Recomendado
+- Probar en el navegador el despliegue del panel "FILTROS DE BÚSQUEDA" en Accidentes, Empresas, Avisos, Extintores y Control Eléctrico para verificar que los filtros abren de forma fluida.
+
+## [2026-09-04] Generación Integral de Datos Ficticios Demo con Correlación Relacional Total
+
+### Resumen de Cambios
+- **Script de Población de Datos Demo (`scripts/seed-demo-data.js`):**
+  - Implementación completa y autónoma para el tenant de demostración `admin-syso` (`19dce876-0f20-4443-b39a-d798165cd620`, usuario `admin@gestionsyso.com`), renombrado a **"Consultora SySO Demo"**.
+  - **Generador Bitonal Nativo de PNGs (`createTextPNG` + `FONT_5X7` + zlib):** Se implementó un conversor directo de matrices de texto a PNG en Node.js puro para sortear la restricción de MIME de Supabase Storage en buckets de logos y firmas (`signatures` y `logos`), asegurando URLs válidas para todas las imágenes institucionales y firmas profesionales.
+  - **Limpieza Previa Idempotente (`cleanTenantData`):** Borrado en cascada y ordenado de todos los datos previos del tenant para permitir re-ejecuciones limpias.
+  - **Correlación Relacional Total (100%):**
+    - **10 Empresas y 14 Establecimientos:** Empresas con industrias diversas (metalúrgica, construcción, frigorífico, plásticos, logística, hotelería, bioquímica, retail, textil, agro) con sectores estructurados (`sectores`) y puestos de trabajo anidados (`puestos`) con dimensiones reales.
+    - **Nómina de Personal (53 trabajadores):** Cada trabajador está asignado estrictamente a un establecimiento, un sector real y un puesto real de la empresa a la que pertenece. Fechas de carga distribuidas entre 2025 y 2026 para garantizar estadísticas comparativas en el Dashboard.
+    - **Accidentes Laborales (8 siniestros):** 100% sincronizados con la nómina real. Cada accidente pertenece a un trabajador existente de esa misma empresa, en su mismo sector, mismo puesto, y con fecha de siniestro del mismo año de su fecha de carga (2025 y 2026), con narrativas y diagnósticos técnicos verosímiles.
+    - **Triángulo Relacional Visitas - Avisos de Riesgo - Acciones Correctivas:** 10 visitas técnicas realizadas por el equipo; las 5 visitas que indican `emite_aviso_riesgo: true` tienen su correspondiente Aviso de Riesgo (`AR-2026-001` a `005`) con idéntica empresa, establecimiento, fecha y profesional, más sus respectivas Acciones Correctivas (`fuente: 'Aviso de riesgo'`) y acciones de rutina (`fuente: 'Visita técnica'`).
+    - **Extintores (29 equipos):** Ubicados exclusivamente en sectores reales, con tipologías adaptadas al riesgo (Clase K en Cocina, CO2 y ABC en sectores mecánicos/eléctricos, ABC en depósitos).
+    - **Control Eléctrico (3 relevamientos):** Tableros ubicados en sectores reales de Metalúrgica del Plata, Constructora San Martín y Plásticos Argentinos, firmados por técnico del equipo.
+    - **Matriz de Riesgos IPER (39 evaluaciones):** Mapeo de cada sector y puesto real de las empresas con evaluación de peligros, riesgos, jerarquía de controles (administrativo, ingeniería, EPP) y re-evaluación residual.
+    - **Protocolos Oficiales de Mediciones (4 protocolos):** Protocolos completos de Iluminación (Res. SRT 84/12), Ruido continuo (Res. SRT 85/12), Ergonomía (Res. SRT 886/15) y Puesta a Tierra (Res. SRT 900/15) con datos de instrumental y puntos de muestreo en los sectores reales de los establecimientos.
+- **Script de Verificación Automatizada (`scratch/verify-correlation.js`):** Script de pruebas que consulta la base de datos viva y valida que el 100% de los registros cumplan la integridad referencial y temática entre tablas.
+
+### Decisiones Clave
+- No permitir datos genéricos o desacoplados: cada módulo toma como fuente de verdad los sectores y puestos definidos en `establecimientos.sectores`.
+- Para los accidentes, se cruzaron los legajos activos de la nómina con el año estadístico para que el Dashboard de Gestión SySO grafique los índices de frecuencia, incidencia y gravedad tanto para 2025 como para 2026 sin inconsistencias.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[NEW] scripts/seed-demo-data.js`
+- `[NEW] scratch/verify-correlation.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Ejecución completa de `node scripts/seed-demo-data.js` con salida exitosa (código 0).
+- Ejecución del validador de integridad `node scratch/verify-correlation.js`: 0 errores detectados en 6 suites de validación cruzada.
+
+### Riesgos Detectados / Remanentes
+- Los datos son 100% ficticios y están confinados únicamente al `tenant_id: 19dce876-0f20-4443-b39a-d798165cd620`, sin riesgo de impactar otros tenants en producción.
+
+### Próximo Paso Recomendado
+- Iniciar sesión en la plataforma con el usuario `admin@gestionsyso.com` para grabar contenidos o navegar por cualquiera de los módulos (Dashboard, Empresas, Establecimientos, Nómina, Accidentes, Visitas, Avisos, Extintores, Matriz, Protocolos) comprobando la correlación de datos.
+
 ## [2026-09-04] Reestructuración Integral de las Instrucciones In-App del Dashboard Principal
 
 ### Resumen de Cambios

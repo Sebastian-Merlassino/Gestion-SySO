@@ -969,25 +969,6 @@ export default function AccionesCorrectivasPage({ params }) {
         .filter((p) => p.denominacion && p.denominacion.trim() !== '')
     : [];
 
-  // Manejo de carga de imagen
-  const handleImagenChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validar tamaño máximo de 5MB
-    if (file.size > 5 * 1024 * 1024) {
-      triggerToast('La imagen no debe superar los 5 MB.', 'error');
-      return;
-    }
-
-    setImagenFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagenPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
-  };
-
   // Helper para subir archivo a storage
   const uploadImageToStorage = async (file) => {
     if (isDevMode) return `mock-path/corrective_${Date.now()}_${file.name}`;

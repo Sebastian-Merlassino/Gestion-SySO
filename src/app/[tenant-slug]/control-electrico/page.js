@@ -15,6 +15,7 @@ import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppSendModal from '@/components/ui/AppSendModal';
+import AppLabel from '@/components/ui/AppLabel';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
@@ -1734,7 +1735,7 @@ export default function ControlElectricoPage({ params }) {
     setIsMailModalOpen(true);
   };
 
-  const handleSendWhatsApp = async () => {
+  const handleSendWhatsApp = async (customMsg) => {
     if (!mailTargetControl) return;
     setWhatsappLoading(true);
     try {

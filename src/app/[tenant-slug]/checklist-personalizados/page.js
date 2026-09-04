@@ -1665,7 +1665,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
     setIsMailModalOpen(true);
   };
 
-  const handleSendEmail = async () => {
+  const handleSendEmail = async (customMsg) => {
     if (!mailTargetInspeccion) return;
 
     const checkedEmails = availableEmails.filter(e => e.checked).map(e => e.valor);
@@ -1713,7 +1713,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
 
       const payload = {
         emails: recipients,
-        filePath,
+        filePath: relativePath,
         customMessage: typeof customMsg === 'string' ? customMsg : undefined,
         companyName: emp?.razon_social || 'N/A',
         establishmentName: est?.denominacion || 'N/A',

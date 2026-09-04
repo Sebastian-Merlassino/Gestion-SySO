@@ -428,6 +428,20 @@ export default function ProtocoloForm({
         const { data: { session } } = await supabase.auth.getSession();
         let emps = [];
         let ests = [];
+        let dbMatriculas = [];
+
+        const getMatriculasForProfile = (profId, singleMat, singleMatProf) => {
+          const matList = [];
+          dbMatriculas
+            .filter(m => m.profile_id === profId && m.numero)
+            .forEach(m => {
+              const formatted = m.institucion ? `${m.institucion} ${m.numero}` : m.numero;
+              matList.push(formatted);
+            });
+          if (singleMat) matList.push(singleMat);
+          if (singleMatProf) matList.push(singleMatProf);
+          return Array.from(new Set(matList.filter(Boolean)));
+        };
 
         if (!session) {
           setIsDevMode(true);
@@ -486,7 +500,6 @@ export default function ProtocoloForm({
             .order('full_name');
 
           // 3. Query matriculas table for all profiles
-          let dbMatriculas = [];
           try {
             const { data: mData } = await supabase
               .from('matriculas')
@@ -495,19 +508,6 @@ export default function ProtocoloForm({
           } catch (mErr) {
             console.log('No tabla matriculas o error al consultar:', mErr);
           }
-
-          const getMatriculasForProfile = (profId, singleMat, singleMatProf) => {
-            const matList = [];
-            dbMatriculas
-              .filter(m => m.profile_id === profId && m.numero)
-              .forEach(m => {
-                const formatted = m.institucion ? `${m.institucion} ${m.numero}` : m.numero;
-                matList.push(formatted);
-              });
-            if (singleMat) matList.push(singleMat);
-            if (singleMatProf) matList.push(singleMatProf);
-            return Array.from(new Set(matList.filter(Boolean)));
-          };
 
           const map = new Map();
 

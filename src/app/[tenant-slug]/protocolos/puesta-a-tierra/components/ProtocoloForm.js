@@ -648,6 +648,20 @@ export default function ProtocoloForm({
     try {
       if (!tenant) return;
 
+      let dbMatriculas = [];
+      const getMatriculasForProfile = (profId, singleMat, singleMatProf) => {
+        const matList = [];
+        dbMatriculas
+          .filter(m => m.profile_id === profId && m.numero)
+          .forEach(m => {
+            const formatted = m.institucion ? `${m.institucion} ${m.numero}` : m.numero;
+            matList.push(formatted);
+          });
+        if (singleMat) matList.push(singleMat);
+        if (singleMatProf) matList.push(singleMatProf);
+        return Array.from(new Set(matList.filter(Boolean)));
+      };
+
       let currentEmps = [];
       const { data: empsData } = await supabase
         .from('empresas')
@@ -681,7 +695,6 @@ export default function ProtocoloForm({
           .eq('tenant_id', tenant.id)
           .order('full_name');
 
-        let dbMatriculas = [];
         try {
           const { data: mData } = await supabase
             .from('matriculas')
@@ -690,19 +703,6 @@ export default function ProtocoloForm({
         } catch (mErr) {
           console.log('No tabla matriculas:', mErr);
         }
-
-        const getMatriculasForProfile = (profId, singleMat, singleMatProf) => {
-          const matList = [];
-          dbMatriculas
-            .filter(m => m.profile_id === profId && m.numero)
-            .forEach(m => {
-              const formatted = m.institucion ? `${m.institucion} ${m.numero}` : m.numero;
-              matList.push(formatted);
-            });
-          if (singleMat) matList.push(singleMat);
-          if (singleMatProf) matList.push(singleMatProf);
-          return Array.from(new Set(matList.filter(Boolean)));
-        };
 
         const map = new Map();
         if (eqMems && eqMems.length > 0) {
@@ -1466,7 +1466,7 @@ export default function ProtocoloForm({
       </div>
 
       {/* CUERPO DEL FORMULARIO CON SCROLL */}
-      <form onSubmit={(e) => { e.preventDefault(); handleSave('finalizado'); }} className="p-3.5 sm:p-6 md:p-8 space-y-4 sm:space-y-6 select-none overflow-y-auto flex-1 scrollbar-thin">
+      <form onSubmit={handleSubmit} className="p-3.5 sm:p-6 md:p-8 space-y-4 sm:space-y-6 select-none overflow-y-auto flex-1 scrollbar-thin">
 
         {/* CARD 1: DATOS DEL ESTABLECIMIENTO */}
         <AppCard className="p-4 sm:p-5 md:p-6 space-y-4">

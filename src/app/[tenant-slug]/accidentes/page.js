@@ -14,6 +14,7 @@ import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
 import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppSelect from '@/components/ui/AppSelect';
+import AppLabel from '@/components/ui/AppLabel';
 import AppTextarea from '@/components/ui/AppTextarea';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';

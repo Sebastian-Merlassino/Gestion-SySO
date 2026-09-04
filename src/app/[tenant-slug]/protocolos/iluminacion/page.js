@@ -520,7 +520,7 @@ export default function ProtocolosIluminacionPage({ params }) {
   };
 
   // Enviar por WhatsApp
-  const handleSendWhatsApp = async () => {
+  const handleSendWhatsApp = async (customMsg) => {
     setWhatsappLoading(true);
     try {
       // 1. Obtener destinatario (si hay)

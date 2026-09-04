@@ -24,9 +24,10 @@ import AppSortIcon from '@/components/ui/AppSortIcon';
 import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
+import AppLabel from '@/components/ui/AppLabel';
 import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
 import { getPdfPrimaryColor } from '@/lib/pdf/pdfTheme';
-import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
+import { getBase64ImageFromUrl, resizeImageForPdf } from '@/lib/pdf/pdfImages';
 import { 
   PlusCircle, 
   AlertCircle,
@@ -1203,6 +1204,7 @@ export default function AvisosRiesgoPage({ params }) {
             // Extraer path relativo si es una URL de Supabase Storage (pública o privada)
             let relativePath = av.firma_digital;
             let isExternal = false;
+            let detectedBucket = null;
             
             if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
               try {
@@ -1211,6 +1213,7 @@ export default function AvisosRiesgoPage({ params }) {
                 // Buscar el índice del bucket para extraer el path relativo del objeto
                 const bucketIndex = pathParts.findIndex(part => part === 'signatures' || part === 'documents');
                 if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
+                  detectedBucket = pathParts[bucketIndex];
                   relativePath = pathParts.slice(bucketIndex + 1).join('/');
                 } else {
                   isExternal = true;
@@ -1224,7 +1227,6 @@ export default function AvisosRiesgoPage({ params }) {
             if (isExternal) {
               signatureBase64 = await getBase64ImageFromUrl(av.firma_digital);
             } else {
-              const detectedBucket = bucketIndex !== -1 ? pathParts[bucketIndex] : null;
               const preferredBucket = detectedBucket || (av.firma_tipo === 'perfil' ? 'signatures' : 'documents');
               const candidateBuckets = Array.from(new Set([preferredBucket, 'signatures', 'documents']));
               let signedUrl = null;

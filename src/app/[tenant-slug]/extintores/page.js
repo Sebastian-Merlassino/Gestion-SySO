@@ -18,6 +18,7 @@ import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
+import AppLabel from '@/components/ui/AppLabel';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
@@ -794,25 +795,6 @@ export default function ExtintoresPage({ params }) {
   const filteredEstablecimientos = allEstablecimientos.filter(
     (est) => est.empresa_id === empresaId
   );
-
-  // Manejo de carga de imagen
-  const handleImagenChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validar tamaño máximo de 5MB
-    if (file.size > 5 * 1024 * 1024) {
-      triggerToast('La imagen no debe superar los 5 MB.', 'error');
-      return;
-    }
-
-    setImagenFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagenPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
-  };
 
   // Helper para subir archivo a storage
   const uploadImageToStorage = async (file) => {

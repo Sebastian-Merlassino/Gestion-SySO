@@ -108,3 +108,38 @@ export function calculateAspectRatioFit(srcWidth, srcHeight, maxWidth, maxHeight
     height: srcHeight * ratio
   };
 }
+
+/**
+ * Redimensiona una imagen en base64 para optimizar tamaño y peso en PDFs
+ */
+export function resizeImageForPdf(base64Str, maxW = 400, maxH = 400, type = 'image/png') {
+  if (!base64Str || typeof window === 'undefined') return Promise.resolve(base64Str);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+      if (width > maxW) {
+        height *= maxW / width;
+        width = maxW;
+      }
+      if (height > maxH) {
+        width *= maxH / height;
+        height = maxH;
+      }
+      canvas.width = Math.round(width);
+      canvas.height = Math.round(height);
+      const ctx = canvas.getContext('2d');
+      if (type === 'image/jpeg') {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL(type, type === 'image/jpeg' ? 0.75 : undefined));
+    };
+    img.onerror = () => resolve(base64Str);
+  });
+}
+

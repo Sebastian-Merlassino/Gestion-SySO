@@ -695,6 +695,20 @@ export default function ProtocoloForm({
         const { data: { session } } = await supabase.auth.getSession();
         let emps = [];
         let ests = [];
+        let dbMatriculas = [];
+
+        const getMatriculasForProfile = (profId, singleMat, singleMatProf) => {
+          const matList = [];
+          dbMatriculas
+            .filter(m => m.profile_id === profId && m.numero)
+            .forEach(m => {
+              const formatted = m.institucion ? `${m.institucion} ${m.numero}` : m.numero;
+              matList.push(formatted);
+            });
+          if (singleMat) matList.push(singleMat);
+          if (singleMatProf) matList.push(singleMatProf);
+          return Array.from(new Set(matList.filter(Boolean)));
+        };
 
         let dbActs = [];
         if (!session) {
@@ -765,7 +779,6 @@ export default function ProtocoloForm({
             .order('full_name');
 
           // 3. Query matriculas table for all profiles
-          let dbMatriculas = [];
           try {
             const { data: mData } = await supabase
               .from('matriculas')
@@ -774,19 +787,6 @@ export default function ProtocoloForm({
           } catch (mErr) {
             console.log('No tabla matriculas o error al consultar:', mErr);
           }
-
-          const getMatriculasForProfile = (profId, singleMat, singleMatProf) => {
-            const matList = [];
-            dbMatriculas
-              .filter(m => m.profile_id === profId && m.numero)
-              .forEach(m => {
-                const formatted = m.institucion ? `${m.institucion} ${m.numero}` : m.numero;
-                matList.push(formatted);
-              });
-            if (singleMat) matList.push(singleMat);
-            if (singleMatProf) matList.push(singleMatProf);
-            return Array.from(new Set(matList.filter(Boolean)));
-          };
 
           const map = new Map();
 
@@ -1506,53 +1506,6 @@ export default function ProtocoloForm({
       fracciones: fracs,
       resultado_suma_fracciones: validCount > 0 ? Number(total.toFixed(3)).toString() : p.resultado_suma_fracciones
     };
-  };
-
-  // Specific Activity selection (Table 2 lookup)
-  const handleActividadSelect = (puntoId, idx) => {
-    setPuntos(puntos.map(p => {
-      if (p.id === puntoId) {
-        const item = ACTIVIDADES_ILUMINACION[idx];
-        return {
-          ...p,
-          selectedActividadIndex: idx,
-          valor_requerido_legal_lux: item ? String(item.lux) : p.valor_requerido_legal_lux
-        };
-      }
-      return p;
-    }));
-  };
-
-  // Handle geometry change (auto recalculates minimum measurement points)
-  const handlePuntoGeometriaChange = (puntoId, field, val) => {
-    setPuntos(puntos.map(p => {
-      if (p.id !== puntoId) return p;
-      const updatedPunto = { ...p, [field]: val };
-
-      const largo = parseFloat(field === 'largo_m' ? val : updatedPunto.largo_m);
-      const ancho = parseFloat(field === 'ancho_m' ? val : updatedPunto.ancho_m);
-      const altura = parseFloat(field === 'altura_m' ? val : updatedPunto.altura_m);
-
-      if (largo > 0 && ancho > 0 && altura > 0) {
-        const indice_local = (largo * ancho) / (altura * (largo + ancho));
-        const indice_local_corregido = indice_local >= 3 ? 4 : Math.ceil(indice_local);
-        const numero_minimo_puntos_medicion = Math.pow(indice_local_corregido + 2, 2);
-
-        let currentMediciones = [...updatedPunto.mediciones];
-        if (currentMediciones.length < numero_minimo_puntos_medicion) {
-          const needed = numero_minimo_puntos_medicion - currentMediciones.length;
-          for (let i = 0; i < needed; i++) {
-            currentMediciones.push({
-              id: 'm-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 4),
-              valor_lux: ''
-            });
-          }
-          updatedPunto.mediciones = currentMediciones;
-        }
-      }
-
-      return updatedPunto;
-    }));
   };
 
   // SUBMIT FLOW - PROFILE SYNC WIZARD
@@ -4226,3 +4179,66 @@ export default function ProtocoloForm({
   </>
   );
 }
+
+// Helpers de procesamiento de imágenes asíncronos y evasión de CSP
+const dataURLtoBlob = (dataUrl) => {
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+};
+
+const bakeImageWithMarkers = (imageUrl, markers) => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = imageUrl;
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        const minDim = Math.min(img.naturalWidth, img.naturalHeight);
+        const radius = Math.max(16, minDim * 0.02);
+        
+        markers.forEach((p) => {
+          const pxX = (p.x / 100) * img.naturalWidth;
+          const pxY = (p.y / 100) * img.naturalHeight;
+
+          ctx.beginPath();
+          ctx.arc(pxX, pxY, radius, 0, 2 * Math.PI);
+          ctx.fillStyle = '#468DFF';
+          ctx.fill();
+          
+          ctx.lineWidth = Math.max(2, radius * 0.15);
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.stroke();
+
+          ctx.fillStyle = '#FFFFFF';
+          const fontSize = Math.round(radius * 1.1);
+          ctx.font = `bold ${fontSize}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(p.number.toString(), pxX, pxY);
+        });
+
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      } catch (err) {
+        console.error('Error in bakeImageWithMarkers:', err);
+        resolve(null);
+      }
+    };
+    img.onerror = () => {
+      resolve(null);
+    };
+  });
+};
+
